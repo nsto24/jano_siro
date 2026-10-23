@@ -1,0 +1,89 @@
+/*
+ * File:                dfplayermini.c
+ * Author:              Nicolas Stock
+ * Comments:            
+ * Revision history:    08.10.2026, 19:04
+ */
+
+
+// #include
+#include "globals.h"
+#include "dfplayermini_commands.h"
+#include "uart.h"
+
+// Functions
+
+void DFP_sendCommand(unsigned char cmd, unsigned char feedback, uint16_t parameter){
+    unsigned char DFP_msg[11];
+    uint16_t checksum = 0x0000;
+    
+    if(feedback != 0){ feedback = 0x01; }
+    else{ feedback = 0x00; }
+    
+    DFP_msg[0] = DFP_START_BYTE;                                // 0x7E
+    DFP_msg[1] = DFP_VERSION;                                   // 0xFF
+    DFP_msg[2] = DFP_LENGTH;                                    // 0x06
+    DFP_msg[3] = cmd;                                           // command defined as byte
+    DFP_msg[4] = feedback;                                      // feedback: 0x01, no feedback: 0x00
+    DFP_msg[5] = (parameter & 0xFF00) >> 8;                     // MSB of parameter
+    DFP_msg[6] = (parameter & 0x00FF);                          // LSB of parameter
+    checksum   = DFP_calc_checksum(cmd, feedback, parameter);   // Generate checksum of 16bit
+    DFP_msg[7] = (checksum & 0xFF00) >> 8;                      // MSB of checksum
+    DFP_msg[8] = (checksum & 0x00FF);                           // LSB of checksum  
+    DFP_msg[9] = DFP_END_BYTE;                                  // 0xEF                               
+    
+    for(int i = 0; i < sizeof(DFP_msg); i++){
+        UART_WriteChar2(DFP_msg[i]);
+    }
+}
+
+uint16_t DFP_calc_checksum(unsigned char cmd, unsigned char feedback, uint16_t parameter){
+    // Checksum (2 bytes) = 0xFFFF?(Ver.+Length+CMD+Feedback+Para_MSB+Para_LSB)+1
+    return 0xFFFF - (DFP_VERSION + DFP_LENGTH + cmd + feedback + ((parameter & 0xFF00) >> 8) + (parameter & 0x00FF)) + 1;
+}
+
+// MISSING INIT FUNCTION
+
+void DFP_specificVolume(unsigned char vol){
+    DFP_sendCommand(DFP_SPECIFY_VOLUME, DFP_NO_FEEDBACK,(uint16_t)vol);
+}
+
+void DFP_increaseVolume(){
+    DFP_sendCommand(DFP_INCREASE_VOLUME, DFP_NO_FEEDBACK, 0x0000);
+}
+
+void DFP_decreaseVolume(){
+    DFP_sendCommand(DFP_DECREASE_VOLUME, DFP_NO_FEEDBACK, 0x0000);
+}
+
+void DFP_playSpecificTrack(unsigned int num){
+    DFP_sendCommand(DFP_SPECIFY_PLAYBACK_OF_A_TRACK, DFP_NO_FEEDBACK, (uint16_t)num);
+}
+
+void DFP_pause(){
+    DFP_sendCommand(DFP_PAUSE, DFP_NO_FEEDBACK, 0x0000);
+}
+
+void DFP_play(){
+    DFP_sendCommand(DFP_PLAY, DFP_NO_FEEDBACK, 0x0000);
+}
+
+void DFP_reset(){
+    DFP_sendCommand(DFP_RESET, DFP_NO_FEEDBACK, 0x0000);
+}
+
+void DFP_playNext(){
+    DFP_sendCommand(DFP_PLAY_NEXT, DFP_NO_FEEDBACK, 0x0000);
+}
+
+void DFP_playPrevious(){
+    DFP_sendCommand(DFP_PLAY_PREVIOUS, DFP_NO_FEEDBACK, 0x0000);
+}
+
+void DFP_enableDAC(){   // Enables output DAC, for audio jack
+    DFP_sendCommand(DFP_SET_DAC, DFP_NO_FEEDBACK, 0x0001);
+}
+
+void DFP_disableDAC(){  // Disables output DAC, for audio jack
+    DFP_sendCommand(DFP_SET_DAC, DFP_NO_FEEDBACK, 0x0000);
+}
