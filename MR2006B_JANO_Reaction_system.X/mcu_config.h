@@ -97,6 +97,7 @@
 #define SPI_CS_OUTPUTS      LATDbits.LATD2      // Chip select for output shift registers (Output)
 #define SPI_CS_CANBUS       LATDbits.LATD3      // Chip select for canbus module (Output)
 #define SPI_CS_INPUTS       LATDbits.LATD5      // Chip select for input shift registers (Output)
+#define SPI_CS_INPUTS_SNAP  LATBbits.LATB6      // Chip select for intut shift registers snapshot (Output)
 
 #define SPI_SCK1            LATCbits.LATC3      // SPI channel 1 clock
 #define SPI_SDI1            PORTCbits.RC4       // SPI channel 1 data in

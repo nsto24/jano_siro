@@ -25,6 +25,7 @@ void Init_SPI(void){
     SPI_CS_DISPLAY = 1;
     SPI_CS_OUTPUTS = 1;
     SPI_CS_INPUTS = 1;
+    SPI_CS_INPUTS_SNAP = 0;
     SPI_CS_CANBUS = 1;
 }
 
@@ -80,12 +81,17 @@ unsigned int SPI_Read_Inputs(void){
     
     unsigned char low_byte = 0;
     unsigned char high_byte = 0;
+    SPI_CS_INPUTS_SNAP = 1;                 // Pull pin of inputs to low (snapshot of inputs)
+    __delay_us(20);
+    SPI_CS_INPUTS_SNAP = 0;                 // Pull pin of inputs to high
+    __delay_us(20);
     
-    SPI_CS_INPUTS = 0;                      // Pull pin of inputs to low (active slave)
+    SPI_CS_INPUTS = 0;                      // Pull pin of inputs to low (snapshot of inputs)
+    __delay_us(20);
+    SPI_CS_INPUTS = 1;                      // Pull pin of inputs to high
     __delay_us(20);
     low_byte = SPI_Read_CH2();              // Reading low byte from slave
     high_byte = SPI_Read_CH2();             // Reading high byte from slave
-    SPI_CS_INPUTS = 1;                      // Pull pin of inputs to high (deactive slave)
     return (low_byte | ((unsigned int)high_byte << 8));   // Return read data
 }
 

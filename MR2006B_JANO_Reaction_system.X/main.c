@@ -67,6 +67,7 @@ void Init_Pins(void){
     TRISB0 = 1;         // RB0 defined as input for Canbus interrupt
     TRISB4 = 0;         // RB4 defined as output for display data/command
     TRISB5 = 0;         // RB5 defined as output for display chip select
+    TRISB6 = 0;         // RB6 defined as output for inputs chip select snapshot
     
     // SPI
     TRISD2 = 0;         // RD2 defined as output for chip selectoutput shift registers
@@ -202,10 +203,10 @@ void main(void) {
         }
         */
         
-        SPI_Write_Outputs(0b1111000011110000);
-        __delay_ms(2000);
-        SPI_Write_Outputs(0b0000111100001111);
-        __delay_ms(2000);
+        unsigned int read = 0;
+        read = SPI_Read_Inputs();
+        SPI_Write_Outputs(read);
+        __delay_ms(50);
     }
     
     return;
