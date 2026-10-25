@@ -26,5 +26,7 @@ void UART_WriteString2(const char *str);
 
 void UART_ISR_Handler(void);
 
+void Init_UART(void);
+
 #endif	/* UART_H */
 

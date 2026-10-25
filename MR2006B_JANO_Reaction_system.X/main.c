@@ -11,6 +11,19 @@
 #include "mode_machines.h"
 #include "mcp2515.h"
 #include "uart.h"
+#include "spi_functions.h"
+#include "hc05.h"
+
+// Global variable instantiations
+volatile unsigned char CAN_received_data[8];
+volatile unsigned int  CAN_received_id;
+volatile unsigned char CAN_received_length;
+volatile unsigned char CAN_new_received_message = 0;
+
+volatile unsigned char UART_received_data1;
+volatile unsigned char UART_new_received_message1 = 0;
+volatile unsigned char UART_received_data2;
+volatile unsigned char UART_new_received_message2 = 0;
 
 // Global variable definition
 typedef enum states{
@@ -40,12 +53,20 @@ static void updateLastState(void){
 // Initialization routines
 
 void Init_Pins(void){
+    // Analog/digital pin definition
+    ANSELA = 0x03;      // RA0 and RA1 remain analog for Joystick, RA2 (button) is digital
+    ANSELB = 0x00;      // All Port B digital
+    ANSELC = 0x00;      // All Port C digital
+    ANSELD = 0x00;      // All Port D digital
+    ANSELE = 0x00;      // All Port E digital
+    
     TRISA0 = 1;         // RA0 defined as input for Joystick X
     TRISA1 = 1;         // RA1 defined as input for Joystick Y
     TRISA2 = 1;         // RA2 defined as input for Joystick button
     
     TRISB0 = 1;         // RB0 defined as input for Canbus interrupt
     TRISB4 = 0;         // RB4 defined as output for display data/command
+    TRISB5 = 0;         // RB5 defined as output for display chip select
     
     // SPI
     TRISD2 = 0;         // RD2 defined as output for chip selectoutput shift registers
@@ -85,8 +106,8 @@ void Init_Interrupts(void){
     SSP1IF = 0;     // Clear SPI CH1 interrupt flag
     SSP2IF = 0;     // Clear SPI CH2 interrupt flag
     
-    SSP1IE = 1;     // Enable SPI CH1 interrupt
-    SSP2IE = 1;     // Enable SPI CH2 interrupt
+    SSP1IE = 0;     // Disable SPI CH1 interrupt
+    SSP2IE = 0;     // Disable SPI CH2 interrupt
     
     // UART enable receive interrupts
     RC1IE = 1;      // Enable UART CH1 receive interrupt
@@ -111,10 +132,17 @@ void main(void) {
     // Local variable definition
     
     // Calling of Init Functions
+    Init_Pins();
+    Init_ADC();
+    Init_Interrupts();
+    Init_SPI();
     Init_UART();
+    Init_Display();
     Init_MCP();
+    Init_HC05();
 
     while(1){
+        /*
         // main programm here
         switch (currentState){
         case stateInit:
@@ -172,6 +200,12 @@ void main(void) {
             // none
             break;
         }
+        */
+        
+        SPI_Write_Outputs(0b1111000011110000);
+        __delay_ms(2000);
+        SPI_Write_Outputs(0b0000111100001111);
+        __delay_ms(2000);
     }
     
     return;

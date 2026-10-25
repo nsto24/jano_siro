@@ -40,7 +40,7 @@ void Init_UART(void){
     RCSTA2 = RCSTA_def;
     
     // Set baud rate generator (9600 baud)
-    int baudSet = (_XTAL_FREQ / (16*9600)) - 1;
+    int baudSet = (unsigned char)(_XTAL_FREQ / (16UL*9600UL)) - 1;
     SPBRG1 = baudSet;  
     SPBRG2 = baudSet;
 }

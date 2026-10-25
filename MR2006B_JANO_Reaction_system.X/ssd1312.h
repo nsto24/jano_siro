@@ -9,6 +9,8 @@
 #ifndef SSD1312_H
 #define	SSD1312_H
 
+#include "fonts.h"
+
 // Hardware specifications
 /*
  * RES      - Reset pin

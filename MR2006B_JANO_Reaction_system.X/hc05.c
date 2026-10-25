@@ -34,7 +34,7 @@ void Init_HC05(void){
     HC05_ENABLE_KEY = 1;
     
     // Reconfigure baud rate to 38400
-    SPBRG = (_XTAL_FREQ / (16*38400)) - 1;     // 38400 baud at 8MHz
+    SPBRG = (_XTAL_FREQ / (16UL*38400UL)) - 1;     // 38400 baud at 8MHz
     
     // Send AT commands to HC-05 module
     UART_WriteString1("AT\r\n");                    // Initializing AT-Command transfer
@@ -53,5 +53,5 @@ void Init_HC05(void){
     // Pull KEY pin back to ground
     HC05_ENABLE_KEY = 0;
     // Restore baud rate of 9600
-    SPBRG = (_XTAL_FREQ / (16*9600)) - 1;
+    SPBRG = (_XTAL_FREQ / (16UL*9600UL)) - 1;
 }

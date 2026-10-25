@@ -25,7 +25,7 @@ void Adc_SetChannel(unsigned char c);
     <p><b>Parameters:</b></p>
     <p><b>Returns: void</b></p>
  */
-void Adc_Enable();
+void Adc_Enable(void);
 
 /**
     <p><b>Function prototype: void Adc_Disable(){}</b></p>
@@ -34,7 +34,7 @@ void Adc_Enable();
     <p><b>Parameters:</b></p>
     <p><b>Returns: void</b></p>
  */
-void Adc_Disable();
+void Adc_Disable(void);
 
 /**
     <p><b>Function prototype: void Adc_ActivateVrefVoltage(){}</b></p>
@@ -43,7 +43,7 @@ void Adc_Disable();
     <p><b>Parameters:</b></p>
     <p><b>Returns: void</b></p>
  */
-void Adc_ActivateVrefVoltage();
+void Adc_ActivateVrefVoltage(void);
 
 /**
     <p><b>Function prototype: void Adc_ActivateInternalVoltage(){}</b></p>
@@ -52,7 +52,7 @@ void Adc_ActivateVrefVoltage();
     <p><b>Parameters:</b></p>
     <p><b>Returns: void</b></p>
  */
-void Adc_ActivateInternalVoltage();
+void Adc_ActivateInternalVoltage(void);
 
 /**
     <p><b>Function prototype: void Adc_StartConversion(){}</b></p>
@@ -61,7 +61,7 @@ void Adc_ActivateInternalVoltage();
     <p><b>Parameters:</b></p>
     <p><b>Returns: void</b></p>
  */
-void Adc_StartConversion();
+void Adc_StartConversion(void);
 
 /**
     <p><b>Function prototype: void Adc_isConverting(){}</b></p>
@@ -70,7 +70,7 @@ void Adc_StartConversion();
     <p><b>Parameters:</b></p>
     <p><b>Returns: int</b></p>
  */
-int Adc_isConverting();
+int Adc_isConverting(void);
 
 /**
     <p><b>Function prototype: void Adc_ReadValue(){}</b></p>
@@ -79,6 +79,6 @@ int Adc_isConverting();
     <p><b>Parameters:</b></p>
     <p><b>Returns: int</b></p>
  */
-int Adc_ReadValue();
+int Adc_ReadValue(void);
 
 #endif	/* ADC_FUNCTIONS_H */

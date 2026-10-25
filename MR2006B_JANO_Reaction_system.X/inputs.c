@@ -43,7 +43,8 @@ char isJoyStickDown(){
 }
 
 char isJoyStickPressed(){
-    return JOYSTICK_SW;
+    if(JOYSTICK_SW !=0){return 1;}
+    else{return 0;}
 }
 
 float JoyStickAxisXpercent(){

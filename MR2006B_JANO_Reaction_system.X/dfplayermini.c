@@ -13,6 +13,11 @@
 
 // Functions
 
+uint16_t DFP_calc_checksum(unsigned char cmd, unsigned char feedback, uint16_t parameter){
+    // Checksum (2 bytes) = 0xFFFF?(Ver.+Length+CMD+Feedback+Para_MSB+Para_LSB)+1
+    return 0xFFFF - (DFP_VERSION + DFP_LENGTH + cmd + feedback + ((parameter & 0xFF00) >> 8) + (parameter & 0x00FF)) + 1;
+}
+
 void DFP_sendCommand(unsigned char cmd, unsigned char feedback, uint16_t parameter){
     unsigned char DFP_msg[11];
     uint16_t checksum = 0x0000;
@@ -35,11 +40,6 @@ void DFP_sendCommand(unsigned char cmd, unsigned char feedback, uint16_t paramet
     for(int i = 0; i < sizeof(DFP_msg); i++){
         UART_WriteChar2(DFP_msg[i]);
     }
-}
-
-uint16_t DFP_calc_checksum(unsigned char cmd, unsigned char feedback, uint16_t parameter){
-    // Checksum (2 bytes) = 0xFFFF?(Ver.+Length+CMD+Feedback+Para_MSB+Para_LSB)+1
-    return 0xFFFF - (DFP_VERSION + DFP_LENGTH + cmd + feedback + ((parameter & 0xFF00) >> 8) + (parameter & 0x00FF)) + 1;
 }
 
 // MISSING INIT FUNCTION

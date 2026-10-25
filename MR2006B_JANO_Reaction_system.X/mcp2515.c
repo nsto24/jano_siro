@@ -10,10 +10,6 @@
 #include "mcp2515_commands.h"
 #include "spi_functions.h"
 
-void Init_MCP(void){
-    MCP_Setup();
-}
-
 void MCP_Setup(void){
     // Reset MCP Module
     SPI_Reset_CanBus();
@@ -207,4 +203,8 @@ void MCP_ISR_Handler(void){
         // Clear interrupt flag inside PIC
         INT0IF = 0;
     }
+}
+
+void Init_MCP(void){
+    MCP_Setup();
 }

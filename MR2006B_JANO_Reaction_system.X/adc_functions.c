@@ -17,7 +17,7 @@
 void Adc_SetChannel(unsigned char c){
     if(c >= 0 && c <= 27){
         ADCON0 = ADCON0 & 0b11000001;   // Clears bits 2,3,4,5,6
-        ADCON0 = ADCON0 | (c << 2);     // Moves channel bits and ORs registry
+        ADCON0 = (unsigned char)(ADCON0 | (c << 2));     // Moves channel bits and ORs registry
         
         __delay_us(20);                 // Delay to await Channel switch
     }

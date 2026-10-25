@@ -9,15 +9,16 @@
 #include "ssd1312.h"
 #include "ssd1312_commands.h"
 #include "fonts.h"
+#include "spi_functions.h"
 
 // Local Frame Buffer: 128 columns * 8 pages (8 pixels per page) = 1024 Bytes
 unsigned char SSD1312_Buffer[1024];
 
 void Init_Display(void) {
     // 1. Hardware Reset
-    DISPLAY_RES = 0;                     
+    //DISPLAY_RES = 0;          // CAUTION!!! Needs to be implemented?              
     __delay_ms(10);                      
-    DISPLAY_RES = 1;                     
+    //DISPLAY_RES = 1;          // CAUTION!!! Needs to be implemented?           
     __delay_ms(50);                      
 
     // 2. Initialization Sequence
@@ -98,7 +99,7 @@ void Display_Draw_Pixel(unsigned int x, unsigned int y, unsigned char color) {
     unsigned int index = x + ((y / 8) * SSD1312_PX_WIDTH);
     
     // Calculate which bit in the byte corresponds to the y coordinate
-    unsigned char bit_mask = 1 << (y % 8);
+    unsigned char bit_mask = (unsigned char)(1 << (y % 8));
 
     if (color == WHITE) {
         SSD1312_Buffer[index] |= bit_mask;     // Set bit

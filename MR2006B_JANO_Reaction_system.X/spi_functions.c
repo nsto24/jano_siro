@@ -11,7 +11,7 @@
 #include "mcp2515_commands.h"
 
 // Initialization function
-void SPI_Init(void){
+void Init_SPI(void){
     SSP1STAT = SSPSTAT_def;
     SSP2STAT = SSPSTAT_def;
     
@@ -20,6 +20,12 @@ void SPI_Init(void){
     
     SSP1IF = 0;       // Clear SSP1IF flag (no data received)
     SSP2IF = 0;       // Clear SSP1IF flag (no data received)
+    
+    // Deselecting all slaves
+    SPI_CS_DISPLAY = 1;
+    SPI_CS_OUTPUTS = 1;
+    SPI_CS_INPUTS = 1;
+    SPI_CS_CANBUS = 1;
 }
 
 // SPI elementary write and read functions
@@ -59,11 +65,11 @@ unsigned char SPI_Read_CH2(){
 void SPI_Write_Outputs(unsigned int data){
     // High byte is written first (shift register further from PIC)
     // Low byte is written second (shift register closer to PIC)
+    SPI_CS_OUTPUTS = 0;                     // Pull pin of outputs to low (active slave)
     
     __delay_us(20);
     SPI_Write_CH1((data >> 8) & 0x00FF);    // Writing high byte to slave
     SPI_Write_CH1(data & 0x00FF);           // Writing low byte to slave
-    SPI_CS_OUTPUTS = 0;                     // Pull pin of outputs to low (active slave)
     __delay_ms(10);                         // Wait writing
     SPI_CS_OUTPUTS = 1;                     // Pull pin of outputs to high (deactive slave)
 }
@@ -77,8 +83,8 @@ unsigned int SPI_Read_Inputs(void){
     
     SPI_CS_INPUTS = 0;                      // Pull pin of inputs to low (active slave)
     __delay_us(20);
-    low_byte = SPI_Read_CH1();              // Reading low byte from slave
-    high_byte = SPI_Read_CH1();             // Reading high byte from slave
+    low_byte = SPI_Read_CH2();              // Reading low byte from slave
+    high_byte = SPI_Read_CH2();             // Reading high byte from slave
     SPI_CS_INPUTS = 1;                      // Pull pin of inputs to high (deactive slave)
     return (low_byte | ((unsigned int)high_byte << 8));   // Return read data
 }
@@ -87,7 +93,7 @@ void SPI_Write_Command_Display(unsigned char cmd){
     //SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     DISPLAY_DC = 0;                         // Set display to "read command" mode
     __delay_us(20);
-    SPI_Write_CH2(cmd);                     // Write command on SPI Bus
+    SPI_Write_CH1(cmd);                     // Write command on SPI Bus
     //SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
@@ -95,7 +101,7 @@ void SPI_Write_Data_Display(unsigned char data){
     //SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     __delay_us(20);
     DISPLAY_DC = 1;                         // Set display to "read data" mode
-    SPI_Write_CH2(data);                    // Write command on SPI Bus
+    SPI_Write_CH1(data);                    // Write command on SPI Bus
     //SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
@@ -104,17 +110,17 @@ void SPI_Write_Data_Array_Display(unsigned char* data, unsigned int length){
     __delay_us(20);
     DISPLAY_DC = 1;                         // Set display to "read data" mode
     for(unsigned int i = 0; i < length; i++){
-        SPI_Write_CH2(data[i]);             // Write command on SPI Bus
+        SPI_Write_CH1(data[i]);             // Write command on SPI Bus
     }
     //SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
 void SPI_Reset_CanBus(void){
-    SPI_CS_CANBUS = 0;      // Pulling enable pin of CanBus Module to GND
+    SPI_CS_CANBUS = 0;          // Pulling enable pin of CanBus Module to GND
     __delay_us(20);
-    SPI_Write_CH1(RESET);   // Write "RESET to CanBus
-    SPI_CS_CANBUS = 1;      // Pulling enable pin of CanBus Module to VCC
-    __delay_ms(10);         // Await internal reset of MCP2515
+    SPI_Write_CH1(MCP_RESET);   // Write "RESET to CanBus
+    SPI_CS_CANBUS = 1;          // Pulling enable pin of CanBus Module to VCC
+    __delay_ms(10);             // Await internal reset of MCP2515
 }
 
 // Only used for single write actions

@@ -10,7 +10,7 @@
 
 // Commands
 
-#define RESET                   0xC0
+#define MCP_RESET               0xC0
 #define WRITE                   0x02
 #define READ                    0x03
 #define READ_RX_BUFFER_0SIDH    0x90    // 10010xx0 : xx=00

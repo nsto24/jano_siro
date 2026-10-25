@@ -11,13 +11,25 @@
 
 // Slave specific read and write functions
 
+void Init_SPI(void);
+
+void SPI_Write_CH1(unsigned char data);
+
+unsigned char SPI_Read_CH1(void);
+
+void SPI_Write_CH2(unsigned char data);
+
+unsigned char SPI_Read_CH2(void);
+
 void SPI_Write_Outputs(unsigned int data);
 
 unsigned int SPI_Read_Inputs(void);
 
-void SPI_Write_Data_Display();
+void SPI_Write_Data_Display(unsigned char data);
 
-void SPI_Write_Command_Display();
+void SPI_Write_Data_Array_Display(unsigned char* data, unsigned int length);
+
+void SPI_Write_Command_Display(unsigned char cmd);
 
 void SPI_Write_CanBus(unsigned char adress, unsigned char data);
 

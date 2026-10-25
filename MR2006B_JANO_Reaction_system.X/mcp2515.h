@@ -18,5 +18,7 @@ unsigned char MCP_ReceiveMessage(unsigned int *standard_id, unsigned char *data,
 
 void MCP_ClearInterruptFlag(void);
 
+void MCP_ISR_Handler(void);
+
 #endif	/* MCP2515_H */
 

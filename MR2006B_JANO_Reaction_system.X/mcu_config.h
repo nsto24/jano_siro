@@ -9,12 +9,14 @@
 #ifndef MCU_CONFIG_H
 #define	MCU_CONFIG_H
 
+#include <xc.h>
+
 // PIC18F46K22 Configuration Bit Settings
 
 // 'C' source line config statements
 
 // CONFIG1H
-#pragma config FOSC = ECHPIO6   // Oscillator Selection bits (EC oscillator (high power, >16 MHz))
+#pragma config FOSC = HSHP      // Oscillator Selection bits (EC oscillator (high power, >16 MHz))
 #pragma config PLLCFG = OFF     // 4X PLL Enable (Oscillator used directly)
 #pragma config PRICLKEN = ON    // Primary clock enable bit (Primary clock is always enabled)
 #pragma config FCMEN = OFF      // Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor disabled)
@@ -82,36 +84,37 @@
 #define _ADC_RES_BITS       10          // ADC with 10 bit resolution
 
 // PORT pins definition
-#define JOYSTICK_X          RA0         // Joystick position X pin
-#define JOYSTICK_Y          RA1         // Joystick position Y pin
-#define JOYSTICK_SW         RA2         // Joystick switch pressed pin
+#define JOYSTICK_X          PORTAbits.RA0       // Joystick position X pin (Input)
+#define JOYSTICK_Y          PORTAbits.RA1       // Joystick position Y pin (Input)
+#define JOYSTICK_SW         PORTAbits.RA2       // Joystick switch pressed pin (Input)
 
-#define DISPLAY_DC          RB4         // Display data/command pin
+#define DISPLAY_DC          LATBbits.LATB4      // Display data/command pin (Output)
 
-#define CANBUS_MSG_INT      RB0         // Canbus module interrupt (message received)
+#define CANBUS_MSG_INT      PORTBbits.RB0       // Canbus module interrupt (Input)
 
 // SPI Channel definitions
-#define SPI_CS_OUTPUTS      RD2         // Chip select for output shift registers
-#define SPI_CS_CANBUS       RD3         // Chip select for canbus module    
-#define SPI_CS_INPUTS       RD5         // Chip select for input shift registers
+#define SPI_CS_DISPLAY      LATBbits.LATB5      // Chip select for display (Output)
+#define SPI_CS_OUTPUTS      LATDbits.LATD2      // Chip select for output shift registers (Output)
+#define SPI_CS_CANBUS       LATDbits.LATD3      // Chip select for canbus module (Output)
+#define SPI_CS_INPUTS       LATDbits.LATD5      // Chip select for input shift registers (Output)
 
-#define SPI_SCK1            RC3         // SPI channel 1 clock
-#define SPI_SDI1            RC4         // SPI channel 1 data in
-#define SPI_SDO1            RC5         // SPI channel 1 data out
-#define SPI_SCK2            RD0         // SPI channel 2 clock
-#define SPI_SDI2            RD1         // SPI channel 2 data in
-#define SPI_SDO2            RD4         // SPI channel 2 data out
+#define SPI_SCK1            LATCbits.LATC3      // SPI channel 1 clock
+#define SPI_SDI1            PORTCbits.RC4       // SPI channel 1 data in
+#define SPI_SDO1            LATCbits.LATC5      // SPI channel 1 data out
+#define SPI_SCK2            LATDbits.LATD0      // SPI channel 2 clock
+#define SPI_SDI2            PORTDbits.RD1       // SPI channel 2 data in
+#define SPI_SDO2            LATDbits.LATD4      // SPI channel 2 data out
 
 // UART definitions
-#define HC05_STATE          RC0         // Bluetooth module state pin (connection status)
-#define HC05_ENABLE_KEY     RC1         // Bluetooth module enable pin (command/data mode)
-#define HC05_UART_TX        RC6         // UART channel 1 transmit
-#define HC05_UART_RX        RC7         // UART channel 1 receive
+#define HC05_STATE          PORTCbits.RC0       // Bluetooth module state pin (Input)
+#define HC05_ENABLE_KEY     LATCbits.LATC1      // Bluetooth module enable pin (Output)
+#define HC05_UART_TX        LATCbits.LATC6      // UART channel 1 transmit
+#define HC05_UART_RX        PORTCbits.RC7       // UART channel 1 receive
 
-#define DFP_BUSY            RC2         // DFPlayer busy
-#define SPEAKER_MUTE        RB3         // Speaker mute (relais)
-#define DFP_UART_TX         RD6         // UART channel 2 transmit
-#define DFP_UART_RX         RD7         // UART channel 2 receive
+#define DFP_BUSY            PORTCbits.RC2       // DFPlayer busy (Input)
+#define SPEAKER_MUTE        LATBbits.LATB3      // Speaker mute relais (Output)
+#define DFP_UART_TX         LATDbits.LATD6      // UART channel 2 transmit
+#define DFP_UART_RX         PORTDbits.RD7       // UART channel 2 receive
 
 // ADC Channel definitions
 #define ADC_CH_JOYSTICK_X   0x00000     // Channel number Joystick x axis channel
@@ -137,12 +140,12 @@
                                         // 6   :  1     Transmit occurs on transition from active to Idle clock state
                                         // 5-1 :  0     Used in I2C only (irrelevant)
                                         // 0   :  0     Receive not complete, SSPBUF is empty (Buffer Full Status Bit - BF)
-#define SSPCON1_def         0b00110011  // Definition MSSP control register 1
+#define SSPCON1_def         0b00100001  // Definition MSSP control register 1
                                         // 7   :  0     No collision (Write Collision Detection Bit - WCOL)
                                         // 6   :  0     No overflow (Receive Overflow Indicator Bit - SSPOV)
                                         // 5   :  1     Enables serial port and configures SCK, SDO, SDI and SS as serial port pins
-                                        // 4   :  1     Idle state for clock is a high level
-                                        // 3-0 :  0011  SPI Master mode, clock = TMR2 output/2
+                                        // 4   :  0     Idle state for clock is a LOW level
+                                        // 3-0 :  0001  SPI Master mode, clock = Fosc/16 (1 MHz clock)
 
 // Interrupt Configuration
 #define INTCON_def          0b11000000  // Definition of INTCON control register
