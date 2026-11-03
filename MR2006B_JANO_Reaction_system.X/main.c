@@ -203,11 +203,16 @@ void main(void) {
         }
         */
         
-        unsigned int read = 0;
-        read = SPI_Read_Inputs();
-        SPI_Write_Outputs(read);
-        __delay_ms(50);
+        
     }
     
     return;
 }
+
+
+/*  Input and Output testing block
+        unsigned int read = 0;
+        read = SPI_Read_Inputs();
+        SPI_Write_Outputs(read);
+        __delay_ms(50);
+ */

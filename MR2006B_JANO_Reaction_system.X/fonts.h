@@ -25,5 +25,6 @@ extern FontDef Font_11x18;
 
 // Declarations for Icons
 extern const unsigned char icon_bt[];
-
+extern const unsigned char icon_speaker[];
+extern const unsigned char icon_arrow[];
 #endif    /* FONTS_H */

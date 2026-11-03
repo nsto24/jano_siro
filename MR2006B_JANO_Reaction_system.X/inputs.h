@@ -24,6 +24,15 @@ typedef struct{
     int y;
 } joystick_t;
 
+typedef enum{
+    JOY_IDLE = 0,
+    JOY_LEFT,
+    JOY_RIGHT,
+    JOY_UP,
+    JOY_DOWN,
+    JOY_PRESSED
+} joystick_state_t;
+
 // Joystick Functions
 /*
  * The Joystick's axis are placed as:
@@ -75,6 +84,15 @@ char isJoyStickUp(void);
     <p><b>Returns: char</b></p>
  */
 char isJoyStickDown(void);
+
+/**
+    <p><b>Function prototype: char isJoyStickIdle(void){}</b></p>
+    <p><b>Summary: Checks Joystick X and Y axis and states position "IDLE" reached</b></p>
+    <p><b>Description: Reads values, evalues and returns bool statement</b></p>
+    <p><b>Parameters:</b></p>
+    <p><b>Returns: char</b></p>
+ */
+char isJoyStickIdle(void);
 
 /**
     <p><b>Function prototype: char isJoyStickPressed(void){}</b></p>

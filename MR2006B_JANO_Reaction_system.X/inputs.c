@@ -11,6 +11,8 @@
 #include "mcu_config.h"
 #include "adc_functions.h"
 
+// Variable definition
+
 // Functions
 
 joystick_t readJoystick(void){
@@ -42,6 +44,11 @@ char isJoyStickDown(){
     return ((read.x < (1023*JOYSTICK_MIN)) && (read.y > (1023*JOYSTICK_MID_MIN) && read.y < (1023*JOYSTICK_MID_MAX)));
 }
 
+char isJoyStickIdle(){
+    joystick_t read = readJoystick();
+    return ((read.x > (1023*JOYSTICK_MIN)) && (read.x < (1023*JOYSTICK_MAX)) && (read.y > (1023*JOYSTICK_MID_MIN) && read.y < (1023*JOYSTICK_MID_MAX)));
+}
+
 char isJoyStickPressed(){
     if(JOYSTICK_SW !=0){return 1;}
     else{return 0;}
@@ -65,4 +72,13 @@ float JoyStickPitchAxisXpercent(){
 float JoyStickPitchAxisYpercent(){
     float y = JoyStickAxisYpercent();
     return (y * 2.0) - 1.0;
+}
+
+joystick_state_t getJoystickState(){
+    if(isJoyStickIdle()){return JOY_IDLE;}
+    else if(isJoyStickRight()){return JOY_RIGHT;}
+    else if(isJoyStickLeft()){return JOY_LEFT;}
+    else if(isJoyStickUp()){return JOY_UP;}
+    else if(isJoyStickDown()){return JOY_DOWN;}
+    else if(isJoyStickPressed()){return JOY_PRESSED;}
 }

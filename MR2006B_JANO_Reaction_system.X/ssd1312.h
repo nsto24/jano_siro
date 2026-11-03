@@ -35,7 +35,8 @@ void Display_Update(void);
 void Display_Draw_Pixel(unsigned int x, unsigned int y, unsigned char color);
 void Display_Draw_Char(unsigned int x, unsigned int y, char c, FontDef* font, unsigned char color);
 void Display_Draw_String(unsigned int x, unsigned int y, char* str, FontDef* font, unsigned char color);
-
+void Display_Draw_Icon(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const unsigned char* icon, unsigned char color);
+void Display_Draw_Headbar();
 
 #endif	/* SSD1312_H */
 

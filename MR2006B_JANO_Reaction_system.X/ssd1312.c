@@ -114,16 +114,31 @@ void Display_Draw_Char(unsigned int x, unsigned int y, char c, FontDef* font, un
         return; 
     }
 
-    // Unprintable character check (Assumes ASCII 32 to 126)
-    if (c < 32 || c > 126) return; 
+    unsigned int char_index = 0;
 
-    // Calculate how many vertical bytes make up one column of the font
+    // 1. Font-specific Character Mapping
+    if (font->height == 18) {
+        // 11x18 Font Mapping: Space = Index 0, '0'-'9' = Index 1-10
+        if (c == ' ') {
+            char_index = 0;
+        } else if (c >= '0' && c <= '9') {
+            char_index = (c - '0') + 1; // Map '0' (48) to Index 1
+        } else {
+            return; // Unsupported character for this truncated font
+        }
+    } else {
+        // Standard 5x7 ASCII Mapping (ASCII 32 to 126)
+        if (c < 32 || c > 126) return; 
+        char_index = c - 32;
+    }
+
+    // 2. Calculate how many vertical bytes make up one column of the font
     unsigned char bytes_per_column = (font->height + 7) / 8;
     
-    // Find character starting index in the array
-    unsigned int font_index = (c - 32) * font->width * bytes_per_column;
+    // 3. Find character starting index in the array
+    unsigned int font_index = char_index * font->width * bytes_per_column;
 
-    // Draw bit-by-bit into the frame buffer
+    // 4. Draw bit-by-bit into the frame buffer
     for (unsigned int col = 0; col < font->width; col++) {
         for (unsigned int byte_idx = 0; byte_idx < bytes_per_column; byte_idx++) {
             
@@ -139,7 +154,8 @@ void Display_Draw_Char(unsigned int x, unsigned int y, char c, FontDef* font, un
                 if (font_data & (1 << bit)) {
                     Display_Draw_Pixel(x + col, y + row, color);
                 } else {
-                    Display_Draw_Pixel(x + col, y + row, BLACK); // Draw background
+                    // Draw background
+                    Display_Draw_Pixel(x + col, y + row, color == WHITE ? BLACK : WHITE); 
                 }
             }
         }
@@ -175,22 +191,23 @@ void Display_Draw_Icon(unsigned int x, unsigned int y, unsigned int width, unsig
     }
 }
 
-void UI_Draw_Headbar(char bt_connected) {
+void Display_Draw_Headbar() {
     // 1. Draw horizontal separator at Y=10
     for (unsigned int x = 0; x < SSD1312_PX_WIDTH; x++) {
         Display_Draw_Pixel(x, 10, WHITE);
     }
     
     // 2. Draw static text (assuming you have a font pointer like &Font5x7)
-    // Display_Draw_String(0, 1, "JANO SYS", &Font5x7, WHITE);
+    Display_Draw_String(0, 1, "SIRO de Rosita", &Font5x7, WHITE);
     
     // 3. Draw dynamic icons (Right-aligned)
-    if (bt_connected) {
-        Display_Draw_Icon(118, 1, 8, 8, icon_bluetooth, WHITE);
+    if(HC05_STATE){
+        Display_Draw_Icon(SSD1312_PX_WIDTH - 1*10, 1, 8, 8, icon_bt, WHITE);
     } else {
         // Erase icon if disconnected by drawing it in BLACK
-        Display_Draw_Icon(118, 1, 8, 8, icon_bluetooth, BLACK);
+        Display_Draw_Icon(SSD1312_PX_WIDTH - 1*10, 1, 8, 8, icon_bt, BLACK);
     }
     
-    // Display_Draw_Icon(106, 1, 8, 8, icon_battery, WHITE);
+    // 4. Drawing speaker icon (missing dynamic of drawing)
+    Display_Draw_Icon(SSD1312_PX_WIDTH - 2*10 - 4, 1, 8, 8, icon_speaker, WHITE);
 }
