@@ -117,3 +117,6 @@ const unsigned char Font11x18[] = {
     /* Insert 11x18 Font Array Data Here */
     0x00
 };
+
+// 8x8 Bluetooth Icon (1 byte per vertical column)
+const unsigned char icon_bt[8] = {0x00, 0x42, 0x24, 0xFF, 0x55, 0x88, 0x50, 0x00};

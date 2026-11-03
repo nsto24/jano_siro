@@ -96,29 +96,29 @@ unsigned int SPI_Read_Inputs(void){
 }
 
 void SPI_Write_Command_Display(unsigned char cmd){
-    //SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
+    SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     DISPLAY_DC = 0;                         // Set display to "read command" mode
     __delay_us(20);
     SPI_Write_CH1(cmd);                     // Write command on SPI Bus
-    //SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
+    SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
 void SPI_Write_Data_Display(unsigned char data){
-    //SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
+    SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     __delay_us(20);
     DISPLAY_DC = 1;                         // Set display to "read data" mode
     SPI_Write_CH1(data);                    // Write command on SPI Bus
-    //SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
+    SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
 void SPI_Write_Data_Array_Display(unsigned char* data, unsigned int length){
-    //SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
+    SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     __delay_us(20);
     DISPLAY_DC = 1;                         // Set display to "read data" mode
     for(unsigned int i = 0; i < length; i++){
         SPI_Write_CH1(data[i]);             // Write command on SPI Bus
     }
-    //SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
+    SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
 void SPI_Reset_CanBus(void){

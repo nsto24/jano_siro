@@ -16,9 +16,9 @@ unsigned char SSD1312_Buffer[1024];
 
 void Init_Display(void) {
     // 1. Hardware Reset
-    //DISPLAY_RES = 0;          // CAUTION!!! Needs to be implemented?              
+    //DISPLAY_RES = 0;                      
     __delay_ms(10);                      
-    //DISPLAY_RES = 1;          // CAUTION!!! Needs to be implemented?           
+    //DISPLAY_RES = 1;                    
     __delay_ms(50);                      
 
     // 2. Initialization Sequence
@@ -152,4 +152,45 @@ void Display_Draw_String(unsigned int x, unsigned int y, char* str, FontDef* fon
         x += (font->width + 1); // 1 pixel gap between characters
         str++; 
     }
+}
+
+void Display_Draw_Icon(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const unsigned char* icon, unsigned char color) {
+    unsigned char bytes_per_column = (height + 7) / 8;
+    
+    for (unsigned int col = 0; col < width; col++) {
+        for (unsigned int byte_idx = 0; byte_idx < bytes_per_column; byte_idx++) {
+            unsigned char icon_data = icon[(col * bytes_per_column) + byte_idx];
+            
+            for (unsigned int bit = 0; bit < 8; bit++) {
+                unsigned int row = (byte_idx * 8) + bit;
+                if (row >= height) break; 
+                
+                if (icon_data & (1 << bit)) {
+                    Display_Draw_Pixel(x + col, y + row, color);
+                } else {
+                    Display_Draw_Pixel(x + col, y + row, color == WHITE ? BLACK : WHITE); // Background
+                }
+            }
+        }
+    }
+}
+
+void UI_Draw_Headbar(char bt_connected) {
+    // 1. Draw horizontal separator at Y=10
+    for (unsigned int x = 0; x < SSD1312_PX_WIDTH; x++) {
+        Display_Draw_Pixel(x, 10, WHITE);
+    }
+    
+    // 2. Draw static text (assuming you have a font pointer like &Font5x7)
+    // Display_Draw_String(0, 1, "JANO SYS", &Font5x7, WHITE);
+    
+    // 3. Draw dynamic icons (Right-aligned)
+    if (bt_connected) {
+        Display_Draw_Icon(118, 1, 8, 8, icon_bluetooth, WHITE);
+    } else {
+        // Erase icon if disconnected by drawing it in BLACK
+        Display_Draw_Icon(118, 1, 8, 8, icon_bluetooth, BLACK);
+    }
+    
+    // Display_Draw_Icon(106, 1, 8, 8, icon_battery, WHITE);
 }

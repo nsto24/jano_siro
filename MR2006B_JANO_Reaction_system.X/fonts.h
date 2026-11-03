@@ -23,4 +23,7 @@ extern const unsigned char Font11x18[];
 extern FontDef Font_5x7;
 extern FontDef Font_11x18;
 
+// Declarations for Icons
+extern const unsigned char icon_bt[];
+
 #endif    /* FONTS_H */
