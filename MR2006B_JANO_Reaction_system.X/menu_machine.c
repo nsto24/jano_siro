@@ -109,7 +109,7 @@ void state_machine_menu(void){
                 Display_Clear(); // Wipes local buffer
 
                 // Draw the static UI headbar at the top
-                Display_Draw_Headbar(1); 
+                Display_Draw_Headbar(); 
 
                 // Render menu items dynamically
                 for (unsigned char i = 0; i < max_items; i++) {

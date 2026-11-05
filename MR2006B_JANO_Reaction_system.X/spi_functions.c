@@ -115,6 +115,7 @@ void SPI_Write_Data_Array_Display(unsigned char* data, unsigned int length){
     SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     __delay_us(20);
     DISPLAY_DC = 1;                         // Set display to "read data" mode
+    __delay_us(20);
     for(unsigned int i = 0; i < length; i++){
         SPI_Write_CH1(data[i]);             // Write command on SPI Bus
     }

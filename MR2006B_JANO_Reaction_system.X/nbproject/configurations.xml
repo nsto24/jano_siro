@@ -19,6 +19,7 @@
       <itemPath>ssd1312.h</itemPath>
       <itemPath>ssd1312_commands.h</itemPath>
       <itemPath>hc05.h</itemPath>
+      <itemPath>dfplayermini.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

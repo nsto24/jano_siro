@@ -13,6 +13,8 @@
 #include "uart.h"
 #include "spi_functions.h"
 #include "hc05.h"
+#include "dfplayermini.h"
+#include "fonts.h"
 
 // Global variable instantiations
 volatile unsigned char CAN_received_data[8];
@@ -24,6 +26,8 @@ volatile unsigned char UART_received_data1;
 volatile unsigned char UART_new_received_message1 = 0;
 volatile unsigned char UART_received_data2;
 volatile unsigned char UART_new_received_message2 = 0;
+
+static unsigned int last_button_state = 0;
 
 // Global variable definition
 typedef enum states{
@@ -123,7 +127,7 @@ void Init_Interrupts(void){
 
 void __interrupt() Interrupts(void){    
     // Call CanBus (MCP) ISR Handler (check if CanBus message was received and handle message)
-    MCP_ISR_Handler();
+    // MCP_ISR_Handler();
     
     // Call UART ISR Handler (check if message was received and handle message)
     UART_ISR_Handler();
@@ -131,6 +135,7 @@ void __interrupt() Interrupts(void){
 
 void main(void) {
     // Local variable definition
+    unsigned char firstCycleFlag = 1;
     
     // Calling of Init Functions
     Init_Pins();
@@ -139,71 +144,29 @@ void main(void) {
     Init_SPI();
     Init_UART();
     Init_Display();
-    Init_MCP();
+    //Init_MCP();
     Init_HC05();
+    Init_DFP();
 
-    while(1){
-        /*
-        // main programm here
-        switch (currentState){
-        case stateInit:
-            // Error handling
-            
-            // Initial state programm (executed once upon call)
-            if(wasTransition()){
-                // Initial programm here
-                
-                // Update lastState
-                updateLastState();
-            }
-                    
-            // State programm (cyclic)
-            
-            // Transititons
-            
-            break;
-        
-        case stateMenu:
-            // Error handling
-            
-            // Initial state programm (executed once upon call)
-            if(wasTransition()){
-                // Initial programm here
-                
-                // Update lastState
-                updateLastState();
-            }
-                    
-            // State programm (cyclic)
-            state_machine_menu();       // State machine of main menu, calls all further machines
-            // Transititons
-            
-            break;
-            
-        case stateError:
-            // Error handling
-            
-            // Initial state programm (executed once upon call)
-            if(wasTransition()){
-                // Initial programm here
-                
-                // Update lastState
-                updateLastState();
-            }
-                    
-            // State programm (cyclic)
-            
-            // Transititons
-            
-            break;
-        
-        default:
-            // none
-            break;
+    while(1){        
+        unsigned int current_buttons = 0;
+        current_buttons = SPI_Read_Inputs();
+        unsigned int button_pressed = (current_buttons ^ last_button_state) & current_buttons;
+        if(current_buttons != last_button_state){
+            SPI_Write_Outputs(button_pressed);
         }
-        */
         
+        if(button_pressed & 0x0001){
+            DFP_play_trackMP3(1);
+        }
         
+        if(button_pressed & 0x0002){
+            Display_Clear();
+            Display_Draw_String(10, 10, "ROSITA TEST", &Font_5x7, WHITE);
+            Display_Update();
+        }
+        
+        last_button_state = current_buttons;
     }
     
     return;
@@ -211,8 +174,5 @@ void main(void) {
 
 
 /*  Input and Output testing block
-        unsigned int read = 0;
-        read = SPI_Read_Inputs();
-        SPI_Write_Outputs(read);
-        __delay_ms(50);
+        
  */

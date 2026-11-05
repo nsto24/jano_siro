@@ -94,6 +94,8 @@ char isJoyStickDown(void);
  */
 char isJoyStickIdle(void);
 
+joystick_state_t getJoystickState(void);
+
 /**
     <p><b>Function prototype: char isJoyStickPressed(void){}</b></p>
     <p><b>Summary: Checks if Joystick is pressed down center</b></p>

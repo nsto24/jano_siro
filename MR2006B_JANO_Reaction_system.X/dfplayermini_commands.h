@@ -73,5 +73,7 @@
 #define DFP_QUERY_NUMBER_OF_TRACKS_IN_A_FOLDER                              0x4E
 #define DFP_QUERY_NUMBER_OF_FOLDERS_IN_THE_CURRENT_STORAGE_DEVICE           0x4F
 
+#define DFP_TF_CARD_ONLINE                                                  0x02
+
 #endif	/* DFPLAYERMINICOMMANDS_H */
 
