@@ -18,6 +18,23 @@
 #define JOYSTICK_MID_MIN    0.4     /* Threshold above which middle Joystick position is detected */
 #define JOYSTICK_MID_MAX    0.6     /* Threshold under which middle Joystick position is detected */
 
+#define BUTTON_A_1          0x0001
+#define BUTTON_A_2          0x0002
+#define BUTTON_A_3          0x0004
+#define BUTTON_A_4          0x0008
+#define BUTTON_B_1          0x0010
+#define BUTTON_B_2          0x0020
+#define BUTTON_B_3          0x0040
+#define BUTTON_B_4          0x0080
+#define BUTTON_C_1          0x0100
+#define BUTTON_C_2          0x0200
+#define BUTTON_C_3          0x0400
+#define BUTTON_C_4          0x0800
+#define BUTTON_D_1          0x1000
+#define BUTTON_D_2          0x2000
+#define BUTTON_D_3          0x4000
+#define BUTTON_D_4          0x8000
+
 // Global variable definition
 typedef struct{
     int x;
@@ -141,5 +158,20 @@ float JoyStickPitchAxisXpercent(void);
  */
 float JoyStickPitchAxisYpercent(void);
 
+float getVolumePot(void);
+
+unsigned int getButtonState(void);
+
+unsigned int getButtonPressed(void);
+
+unsigned int getButtonReleased(void);
+
+unsigned char isButtonPressed(unsigned int mask);
+
+unsigned char wasButtonPressed(unsigned int mask);
+
+unsigned char wasButtonReleased(unsigned int mask);
+
+void Buttons_ISR_Handler(void);
 
 #endif	/* INPUTS_H */

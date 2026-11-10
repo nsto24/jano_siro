@@ -8,7 +8,6 @@
 // #include
 #include "globals.h"
 #include "spi_functions.h"
-#include "mcp2515_commands.h"
 
 // Initialization function
 void Init_SPI(void){

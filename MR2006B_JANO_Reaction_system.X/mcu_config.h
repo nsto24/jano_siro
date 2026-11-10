@@ -33,7 +33,7 @@
 
 // CONFIG3H
 #pragma config CCP2MX = PORTC1  // CCP2 MUX bit (CCP2 input/output is multiplexed with RC1)
-#pragma config PBADEN = ON      // PORTB A/D Enable bit (PORTB<5:0> pins are configured as analog input channels on Reset)
+#pragma config PBADEN = OFF      // PORTB A/D Enable bit (PORTB<5:0> pins are configured as analog input channels on Reset)
 #pragma config CCP3MX = PORTB5  // P3A/CCP3 Mux bit (P3A/CCP3 input/output is multiplexed with RB5)
 #pragma config HFOFST = ON      // HFINTOSC Fast Start-up (HFINTOSC output and ready status are not delayed by the oscillator stable status)
 #pragma config T3CMX = PORTC0   // Timer3 Clock input mux bit (T3CKI is on RC0)
@@ -112,20 +112,22 @@
 #define HC05_UART_TX        LATCbits.LATC6      // UART channel 1 transmit
 #define HC05_UART_RX        PORTCbits.RC7       // UART channel 1 receive
 
+#define VOLUME_POT          PORTAbits.RA3       // Volume potentiometer (Input)
 #define DFP_BUSY            PORTCbits.RC2       // DFPlayer busy (Input)
 #define SPEAKER_MUTE        LATBbits.LATB3      // Speaker mute relais (Output)
 #define DFP_UART_TX         LATDbits.LATD6      // UART channel 2 transmit
 #define DFP_UART_RX         PORTDbits.RD7       // UART channel 2 receive
 
 // ADC Channel definitions
-#define ADC_CH_JOYSTICK_X   0x00000     // Channel number Joystick x axis channel
-#define ADC_CH_JOYSTICK_Y   0x00001     // Channel number Joystick y axis channel
+#define ADC_CH_JOYSTICK_X   0     // Channel number Joystick x axis channel
+#define ADC_CH_JOYSTICK_Y   1     // Channel number Joystick y axis channel
+#define ADC_CH_VOLUME       3     // Channel number Volume potentiometer
 
 // ADC Configuration
 // ADCON0 gets reconfigured in runtime (channel selection, start of conversion)
 // for SPI the Pins AN12 to AN10 must be declared as digital
-#define ADCON1_def          0b00000001  // Voltage definitions
-                                        // 7    :   1       Special trigger bit of CTMU is selected
+#define ADCON1_def          0b00000000  // Voltage definitions
+                                        // 7    :   0       Special trigger bit of CTMU is deselected
                                         // 6-4  :   000     Unused
                                         // 3-2  :   00      Positive Voltage Reference set to internal Vdd
                                         // 1-0  :   00      Negative Voltage Reference set to internal Vss
@@ -167,7 +169,7 @@
                                         // 2   :  0     Overflow interrupt priority set to low
                                         // 1   :  0     Unimplemented
                                         // 0   :  0     Port change interrupt priority set to low
-#define INTCON3_def         0b
+
 
 // EUSART Configuration
 
@@ -190,5 +192,15 @@
                                         // 2   :  0     No framing error
                                         // 1   :  0     No overrun error
                                         // 0   :  0     9th bit of received data (not used)
+
+// Timer Configuration
+
+#define T0CON_def           0b10000010  // Definition of T0CON control register (Timer0)
+                                        // 7    : 1     Enable Timer0
+                                        // 6    : 0     16 bit mode
+                                        // 5    : 0     Internal clock as source
+                                        // 4    : 0     Timer incremented on low to high edge
+                                        // 3    : 0     Prescaler assigned
+                                        // 2-0  : 010   1:8 prescale value
 
 #endif	/* MCU_CONFIG_H */

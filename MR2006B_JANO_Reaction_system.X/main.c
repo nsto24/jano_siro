@@ -9,18 +9,13 @@
 #include "globals.h"
 #include "ssd1312.h"
 #include "mode_machines.h"
-#include "mcp2515.h"
 #include "uart.h"
 #include "spi_functions.h"
 #include "hc05.h"
 #include "dfplayermini.h"
 #include "fonts.h"
-
-// Global variable instantiations
-volatile unsigned char CAN_received_data[8];
-volatile unsigned int  CAN_received_id;
-volatile unsigned char CAN_received_length;
-volatile unsigned char CAN_new_received_message = 0;
+#include "adc_functions.h"
+#include "inputs.h"
 
 volatile unsigned char UART_received_data1;
 volatile unsigned char UART_new_received_message1 = 0;
@@ -28,6 +23,7 @@ volatile unsigned char UART_received_data2;
 volatile unsigned char UART_new_received_message2 = 0;
 
 static unsigned int last_button_state = 0;
+static unsigned char last_volume = 0;
 
 // Global variable definition
 typedef enum states{
@@ -56,9 +52,9 @@ static void updateLastState(void){
 
 // Initialization routines
 
-void Init_Pins(void){
+void Init_Pins(void){    
     // Analog/digital pin definition
-    ANSELA = 0x03;      // RA0 and RA1 remain analog for Joystick, RA2 (button) is digital
+    ANSELA = 0x0B;      // RA3, RA1 and RA0 as analoge
     ANSELB = 0x00;      // All Port B digital
     ANSELC = 0x00;      // All Port C digital
     ANSELD = 0x00;      // All Port D digital
@@ -91,6 +87,7 @@ void Init_Pins(void){
     TRISC6 = 0;         // RC6 defined as output for UART CH1 transmit
     TRISC7 = 1;         // RC7 defined as input for UART CH1 receive
     
+    TRISA3 = 1;         // RA3 defines as input for volume potentiometer
     TRISC2 = 1;         // RC2 defined as input for DFPlayer busy
     TRISB3 = 0;         // RB3 defined as output for Speaker mute relais
     TRISD6 = 0;         // RD6 defined as output for UART CH2 transmit
@@ -98,9 +95,16 @@ void Init_Pins(void){
 }
 
 void Init_ADC(void){
-    
+    ADCON1 = ADCON1_def;
+    ADCON2 = ADCON2_def;
+    Adc_Enable();
 }
 
+void Init_Timers(void){
+    T0CON = T0CON_def;
+    TMR0H = 0xEC;           // Load pre-calculated high byte for 10ms
+    TMR0L = 0x78;           // Load pre-calculated low byte for 10ms
+}
 
 void Init_Interrupts(void){
     INT0IE = 1;     // Enable external interrupt INT0
@@ -118,6 +122,10 @@ void Init_Interrupts(void){
     RC1IE = 1;      // Enable UART CH1 receive interrupt
     RC2IE = 1;      // Enable UART CH2 receive interrupt
     
+    // Timer0 enable
+    TMR0IF = 0;             // Clear interrupt flag
+    TMR0IE = 1;             // Enable Timer0 interrupt
+    
     // Global and Peripheral Interrupt initialization
     PEIE = 1;       // Peripheral Interrupt Enable
     GIE = 1;        // Global Interrupt Enable
@@ -126,8 +134,10 @@ void Init_Interrupts(void){
 // Interrupt serice routines
 
 void __interrupt() Interrupts(void){    
-    // Call CanBus (MCP) ISR Handler (check if CanBus message was received and handle message)
-    // MCP_ISR_Handler();
+    // Call Button Reading ISR Handler (reading buttons and analysing changes)
+    if(TMR0IE && TMR0IF){
+        Buttons_ISR_Handler();
+    }
     
     // Call UART ISR Handler (check if message was received and handle message)
     UART_ISR_Handler();
@@ -140,32 +150,48 @@ void main(void) {
     // Calling of Init Functions
     Init_Pins();
     Init_ADC();
+    Init_Timers();
     Init_Interrupts();
     Init_SPI();
     Init_UART();
     Init_Display();
-    //Init_MCP();
     Init_HC05();
     Init_DFP();
+    
+    SPI_Write_Outputs(0x0000);
 
     while(1){        
         unsigned int current_buttons = 0;
         current_buttons = SPI_Read_Inputs();
         unsigned int button_pressed = (current_buttons ^ last_button_state) & current_buttons;
         if(current_buttons != last_button_state){
-            SPI_Write_Outputs(button_pressed);
+            SPI_Write_Outputs(current_buttons);
         }
         
-        if(button_pressed & 0x0001){
+        if(button_pressed & 0x0001){    // Button 1
             DFP_play_trackMP3(1);
         }
+        if(button_pressed & 0x0002){    // Button 2
+            SPEAKER_MUTE = 0;
+        }
+        if(button_pressed & 0x0004){    // Button 3
+            SPEAKER_MUTE = 1;
+        }
         
+        /*
         if(button_pressed & 0x0002){
             Display_Clear();
             Display_Draw_String(10, 10, "ROSITA TEST", &Font_5x7, WHITE);
             Display_Update();
         }
+        */
         
+        unsigned char current_volume = (unsigned char)((getVolumePot()/1023.0)*30);  // Read Pot and scales it to 0..30
+        if(current_volume != last_volume){
+            DFP_specificVolume(current_volume);
+        }
+        
+        last_volume = current_volume;
         last_button_state = current_buttons;
     }
     

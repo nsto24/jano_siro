@@ -10,10 +10,15 @@
 #include "globals.h"
 #include "mcu_config.h"
 #include "adc_functions.h"
+#include "spi_functions.h"
 
 // Variable definition
 
-// Functions
+volatile unsigned int btn_state = 0;        // Saves the state of the buttons on last read
+volatile unsigned int btn_pressed = 0;      // Saves which buttons were newly pressed on last read
+volatile unsigned int btn_released = 0;     // Saves which buttons were released on last read
+
+// Functions for Joystick reading
 
 joystick_t readJoystick(void){
     joystick_t res;
@@ -81,4 +86,74 @@ joystick_state_t getJoystickState(){
     else if(isJoyStickUp()){return JOY_UP;}
     else if(isJoyStickDown()){return JOY_DOWN;}
     else if(isJoyStickPressed()){return JOY_PRESSED;}
+}
+
+// Functions for Volume Potentiometer reading
+
+float getVolumePot(void){
+    float res = 0;
+    Adc_SetChannel(ADC_CH_VOLUME);
+    res = Adc_ReadValue();
+    return res;
+}
+
+// Functions for Reading of buttons
+
+unsigned int getButtonState(void){
+    unsigned int temp = 0;
+    GIE = 0;                    // Disable global interrupts
+    temp = btn_state;           
+    GIE = 1;                    // Enable global interrupts
+    return temp;
+}
+
+unsigned int getButtonPressed(void){
+    unsigned int temp = 0;
+    GIE = 0;                    // Disable global interrupts
+    temp = btn_pressed;           
+    GIE = 1;                    // Enable global interrupts
+    return temp;
+}
+
+unsigned int getButtonReleased(void){
+    unsigned int temp = 0;
+    GIE = 0;                    // Disable global interrupts
+    temp = btn_released;           
+    GIE = 1;                    // Enable global interrupts
+    return temp;
+}
+
+unsigned char isButtonPressed(unsigned int mask){
+    return btn_state & mask;
+}
+
+unsigned char wasButtonPressed(unsigned int mask){
+    return btn_pressed & mask;
+}
+
+unsigned char wasButtonReleased(unsigned int mask){
+    return btn_released & mask;
+}
+
+void Buttons_ISR_Handler(void){
+    unsigned int btn_raw = 0;
+    
+    // Reset Timer0 registers for the next 10ms tick
+    TMR0H = 0xEC;
+    TMR0L = 0x78;
+    
+    // Reading buttons from input register
+    btn_raw = SPI_Read_Inputs();
+    
+    // Analysing rising edges:  Set if one bit is set among last and raw and raw is set
+    btn_pressed |= (btn_state ^ btn_raw) & btn_raw;     // OR= (last XOR raw) AND raw
+    
+    // Analysing falling edges:  Set if one bit is set among last and raw and raw is not set
+    btn_released |= (btn_state ^ btn_raw) & ~btn_raw;   // OR= (last XOR raw) AND NOT raw
+
+    // Writing the read button states into the current state variable
+    btn_state = btn_raw;
+    
+    // Clearing interrupt flag
+    TMR0IF = 0;
 }

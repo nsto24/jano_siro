@@ -24,10 +24,6 @@
 #define SPI_BUFFER_SIZE 64      // Size of buffer for received string SPI messages
 
 // Global variables for all modules
-extern volatile unsigned char CAN_received_data[8];
-extern volatile unsigned int CAN_received_id;
-extern volatile unsigned char CAN_received_length;
-extern volatile unsigned char CAN_new_received_message;
 
 extern volatile unsigned char UART_received_data1;
 extern volatile unsigned char UART_new_received_message1;
