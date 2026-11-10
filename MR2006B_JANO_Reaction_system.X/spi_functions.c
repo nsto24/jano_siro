@@ -120,32 +120,3 @@ void SPI_Write_Data_Array_Display(unsigned char* data, unsigned int length){
     }
     SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
-
-void SPI_Reset_CanBus(void){
-    SPI_CS_CANBUS = 0;          // Pulling enable pin of CanBus Module to GND
-    __delay_us(20);
-    SPI_Write_CH1(MCP_RESET);   // Write "RESET to CanBus
-    SPI_CS_CANBUS = 1;          // Pulling enable pin of CanBus Module to VCC
-    __delay_ms(10);             // Await internal reset of MCP2515
-}
-
-// Only used for single write actions
-void SPI_Write_CanBus(unsigned char adress, unsigned char data){
-    SPI_CS_CANBUS = 0;      // Pulling enable pin of CanBus Module to GND
-    __delay_us(20);
-    SPI_Write_CH1(WRITE);   // Write Command "WRITE" to CanBus
-    SPI_Write_CH1(adress);  // Write Adress to CanBus
-    SPI_Write_CH1(data);    // Write Data to CanBus
-    SPI_CS_CANBUS = 1;      // Pulling enable pin of CanBus Module to VCC
-}
-
-unsigned char SPI_Read_CanBus(unsigned char adress){
-    unsigned char data;
-    SPI_CS_CANBUS = 0;      // Pulling enable pin of CanBus Module to GND
-    __delay_us(20);
-    SPI_Write_CH1(READ);    // Write Command "READ" to CanBus
-    SPI_Write_CH1(adress);  // Write Adress to CanBus
-    data = SPI_Read_CH1();  // Read Data from CanBus
-    SPI_CS_CANBUS = 1;      // Pulling enable pin of CanBus Module to VCC
-    return data;
-}

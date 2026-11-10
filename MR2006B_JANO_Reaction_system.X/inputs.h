@@ -158,7 +158,11 @@ float JoyStickPitchAxisXpercent(void);
  */
 float JoyStickPitchAxisYpercent(void);
 
-float getVolumePot(void);
+unsigned char getVolumeState(void);
+
+unsigned char hasVolumeChanged(void);
+
+void Sync_Inputs(void);
 
 unsigned int getButtonState(void);
 

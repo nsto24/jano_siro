@@ -23,6 +23,14 @@
 #define TX_BUFFER_SIZE  64      // Size of buffer for received string UART messages
 #define SPI_BUFFER_SIZE 64      // Size of buffer for received string SPI messages
 
+// Timer 0 calculation
+#define T0PS            8           // Timer0 Prescaler (look T0CON_def)
+#define TARGET_MS       10          // Target interrupt time in milliseconds
+#define TIMER0_TICKS    (((_XTAL_FREQ / 4000) * TARGET_MS) / T0PS)
+#define TIMER0_RELOAD   (65536 - TIMER0_TICKS)
+#define TMR0H_VAL       (unsigned char)(TIMER0_RELOAD >> 8)
+#define TMR0L_VAL       (unsigned char)(TIMER0_RELOAD & 0xFF)
+
 // Global variables for all modules
 
 extern volatile unsigned char UART_received_data1;

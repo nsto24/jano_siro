@@ -22,7 +22,6 @@ volatile unsigned char UART_new_received_message1 = 0;
 volatile unsigned char UART_received_data2;
 volatile unsigned char UART_new_received_message2 = 0;
 
-static unsigned int last_button_state = 0;
 static unsigned char last_volume = 0;
 
 // Global variable definition
@@ -102,8 +101,8 @@ void Init_ADC(void){
 
 void Init_Timers(void){
     T0CON = T0CON_def;
-    TMR0H = 0xEC;           // Load pre-calculated high byte for 10ms
-    TMR0L = 0x78;           // Load pre-calculated low byte for 10ms
+    TMR0H = TMR0H_VAL;   // Load pre-calculated high byte for 10ms
+    TMR0L = TMR0L_VAL;   // Load pre-calculated low byte for 10ms
 }
 
 void Init_Interrupts(void){
@@ -135,9 +134,7 @@ void Init_Interrupts(void){
 
 void __interrupt() Interrupts(void){    
     // Call Button Reading ISR Handler (reading buttons and analysing changes)
-    if(TMR0IE && TMR0IF){
-        Buttons_ISR_Handler();
-    }
+    Buttons_ISR_Handler();
     
     // Call UART ISR Handler (check if message was received and handle message)
     UART_ISR_Handler();
@@ -161,20 +158,18 @@ void main(void) {
     SPI_Write_Outputs(0x0000);
 
     while(1){        
-        unsigned int current_buttons = 0;
-        current_buttons = SPI_Read_Inputs();
-        unsigned int button_pressed = (current_buttons ^ last_button_state) & current_buttons;
-        if(current_buttons != last_button_state){
-            SPI_Write_Outputs(current_buttons);
-        }
+        // Must functions beginning of while loop
+        Sync_Inputs();   
         
-        if(button_pressed & 0x0001){    // Button 1
+        SPI_Write_Outputs(getButtonState());
+        
+        if(wasButtonPressed(BUTTON_A_1)){    // Button 1
             DFP_play_trackMP3(1);
         }
-        if(button_pressed & 0x0002){    // Button 2
+        if(wasButtonPressed(BUTTON_A_2)){    // Button 2
             SPEAKER_MUTE = 0;
         }
-        if(button_pressed & 0x0004){    // Button 3
+        if(wasButtonPressed(BUTTON_A_3)){    // Button 3
             SPEAKER_MUTE = 1;
         }
         
@@ -186,13 +181,9 @@ void main(void) {
         }
         */
         
-        unsigned char current_volume = (unsigned char)((getVolumePot()/1023.0)*30);  // Read Pot and scales it to 0..30
-        if(current_volume != last_volume){
-            DFP_specificVolume(current_volume);
+        if(hasVolumeChanged()){
+            DFP_specificVolume(getVolumeState());
         }
-        
-        last_volume = current_volume;
-        last_button_state = current_buttons;
     }
     
     return;
