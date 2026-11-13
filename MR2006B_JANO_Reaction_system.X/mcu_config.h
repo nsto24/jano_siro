@@ -1,11 +1,11 @@
-/* 
- * File:                mcu_config.h 
+/*
+ * File:                mcu_config.h
  * Author:              Nicolas Stock
- * Comments:            
+ * Comments:
  * Revision history:    31.08.2026 15:51 - Created file
  */
 
-// Guard condition so that contents are not included more than once.  
+// Guard condition so that contents are not included more than once.
 #ifndef MCU_CONFIG_H
 #define	MCU_CONFIG_H
 
@@ -33,7 +33,7 @@
 
 // CONFIG3H
 #pragma config CCP2MX = PORTC1  // CCP2 MUX bit (CCP2 input/output is multiplexed with RC1)
-#pragma config PBADEN = OFF      // PORTB A/D Enable bit (PORTB<5:0> pins are configured as analog input channels on Reset)
+#pragma config PBADEN = OFF     // PORTB A/D Enable bit (PORTB<5:0> pins are configured as analog input channels on Reset)
 #pragma config CCP3MX = PORTB5  // P3A/CCP3 Mux bit (P3A/CCP3 input/output is multiplexed with RB5)
 #pragma config HFOFST = ON      // HFINTOSC Fast Start-up (HFINTOSC output and ready status are not delayed by the oscillator stable status)
 #pragma config T3CMX = PORTC0   // Timer3 Clock input mux bit (T3CKI is on RC0)
@@ -42,7 +42,7 @@
 
 // CONFIG4L
 #pragma config STVREN = ON      // Stack Full/Underflow Reset Enable bit (Stack full/underflow will cause Reset)
-#pragma config LVP = ON         // Single-Supply ICSP Enable bit (Single-Supply ICSP enabled if MCLRE is also 1)
+#pragma config LVP = OFF        // Single-Supply ICSP Enable bit (Single-Supply ICSP enabled if MCLRE is also 1)
 #pragma config XINST = OFF      // Extended Instruction Set Enable bit (Instruction set extension and Indexed Addressing mode disabled (Legacy mode))
 
 // CONFIG5L
@@ -79,7 +79,7 @@
 
 // MCU #define
 
-#define _XTAL_FREQ          16000000    // 16-MHz crystal frequency
+#define _XTAL_FREQ          16000000UL  // 16-MHz crystal frequency
 
 #define _ADC_RES_BITS       10          // ADC with 10 bit resolution
 
@@ -89,13 +89,11 @@
 #define JOYSTICK_SW         PORTAbits.RA2       // Joystick switch pressed pin (Input)
 
 #define DISPLAY_DC          LATBbits.LATB4      // Display data/command pin (Output)
-
-#define CANBUS_MSG_INT      PORTBbits.RB0       // Canbus module interrupt (Input)
+#define DISPLAY_RES         LATBbits.LATB0      // Display reset pin
 
 // SPI Channel definitions
 #define SPI_CS_DISPLAY      LATBbits.LATB5      // Chip select for display (Output)
 #define SPI_CS_OUTPUTS      LATDbits.LATD2      // Chip select for output shift registers (Output)
-#define SPI_CS_CANBUS       LATDbits.LATD3      // Chip select for canbus module (Output)
 #define SPI_CS_INPUTS       LATDbits.LATD5      // Chip select for input shift registers (Output)
 #define SPI_CS_INPUTS_SNAP  LATBbits.LATB6      // Chip select for intut shift registers snapshot (Output)
 
@@ -138,24 +136,30 @@
                                         // 2-0  :   010     A/D Conversion clock select bits (Fosc/32)
 
 // SPI Configuration
-#define SSPSTAT_def         0b01000000  // Definition MSSP status register
+#define SSPSTAT_def         0b00000000  // Definition MSSP status register
                                         // 7   :  0     Input data sampled at middle of data output time
                                         // 6   :  1     Transmit occurs on transition from active to Idle clock state
                                         // 5-1 :  0     Used in I2C only (irrelevant)
                                         // 0   :  0     Receive not complete, SSPBUF is empty (Buffer Full Status Bit - BF)
-#define SSPCON1_def         0b00100001  // Definition MSSP control register 1
+#define SSPCON1_def         0b00110001  // Definition MSSP control register 1
                                         // 7   :  0     No collision (Write Collision Detection Bit - WCOL)
                                         // 6   :  0     No overflow (Receive Overflow Indicator Bit - SSPOV)
                                         // 5   :  1     Enables serial port and configures SCK, SDO, SDI and SS as serial port pins
                                         // 4   :  0     Idle state for clock is a LOW level
                                         // 3-0 :  0001  SPI Master mode, clock = Fosc/16 (1 MHz clock)
+#define SSPCON2_def         0b00110001  // Definition MSSP control register 1
+                                        // 7   :  0     No collision (Write Collision Detection Bit - WCOL)
+                                        // 6   :  0     No overflow (Receive Overflow Indicator Bit - SSPOV)
+                                        // 5   :  1     Enables serial port and configures SCK, SDO, SDI and SS as serial port pins
+                                        // 4   :  1     Idle state for clock is a HIGH level
+                                        // 3-0 :  0001  SPI Master mode, clock = Fosc/16 (1 MHz clock)
 
 // Interrupt Configuration
 #define INTCON_def          0b11000000  // Definition of INTCON control register
-                                        // 7   :  1     All global interrupts are enabled   
+                                        // 7   :  1     All global interrupts are enabled
                                         // 6   :  1     All peripheral interrupts are enabled
                                         // 5   :  0     Overflow interrupt is disabled
-                                        // 4   :  ?     External interrupt is disabled CAUTION 
+                                        // 4   :  ?     External interrupt is disabled CAUTION
                                         // 3   :  0     Port change interrupt is disabled
                                         // 2   :  0     Overflow interrupt flag is low (has not accured)
                                         // 1   :  0     External interrupt flag is low (has not accured)

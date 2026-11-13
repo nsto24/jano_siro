@@ -59,38 +59,37 @@ void Init_Pins(void){
     ANSELD = 0x00;      // All Port D digital
     ANSELE = 0x00;      // All Port E digital
     
-    TRISA0 = 1;         // RA0 defined as input for Joystick X
-    TRISA1 = 1;         // RA1 defined as input for Joystick Y
-    TRISA2 = 1;         // RA2 defined as input for Joystick button
+    TRISAbits.TRISA0 = 1; // RA0 defined as input for Joystick X
+    TRISAbits.TRISA1 = 1; // RA1 defined as input for Joystick Y
+    TRISAbits.TRISA2 = 1; // RA2 defined as input for Joystick button
     
-    TRISB0 = 1;         // RB0 defined as input for Canbus interrupt
-    TRISB4 = 0;         // RB4 defined as output for display data/command
-    TRISB5 = 0;         // RB5 defined as output for display chip select
-    TRISB6 = 0;         // RB6 defined as output for inputs chip select snapshot
+    TRISBbits.TRISB0 = 0; // RB0 defined as output for display reset
+    TRISBbits.TRISB4 = 0; // RB4 defined as output for display data/command
+    TRISBbits.TRISB5 = 0; // RB5 defined as output for display chip select
+    TRISBbits.TRISB6 = 0; // RB6 defined as output for inputs chip select snapshot
     
     // SPI
-    TRISD2 = 0;         // RD2 defined as output for chip selectoutput shift registers
-    TRISD3 = 0;         // RD3 defined as output for chip select canbus module
-    TRISD5 = 0;         // RD5 defined as output for chip  select input shift registers
+    TRISDbits.TRISD2 = 0; // RD2 defined as output for chip select output shift registers
+    TRISDbits.TRISD5 = 0; // RD5 defined as output for chip select input shift registers
     
-    TRISC3 = 0;         // RC3 defined as output for SPI CH1 clock
-    TRISC4 = 1;         // RC4 defined as input for SPI CH1 data in
-    TRISC5 = 0;         // RC3 defined as output for SPI CH1 data out
-    TRISD0 = 0;         // RD0 defined as output for SPI CH2 clock
-    TRISD1 = 1;         // RD1 defined as input for SPI CH2 data in
-    TRISD4 = 0;         // RD4 defined as output for SPI CH2 data out
+    TRISCbits.TRISC3 = 0; // RC3 defined as output for SPI CH1 clock
+    TRISCbits.TRISC4 = 1; // RC4 defined as input for SPI CH1 data in
+    TRISCbits.TRISC5 = 0; // RC5 defined as output for SPI CH1 data out
+    TRISDbits.TRISD0 = 0; // RD0 defined as output for SPI CH2 clock
+    TRISDbits.TRISD1 = 1; // RD1 defined as input for SPI CH2 data in
+    TRISDbits.TRISD4 = 0; // RD4 defined as output for SPI CH2 data out
     
     // UART
-    TRISC0 = 1;         // RC0 defined as input for bluetooth state 
-    TRISC1 = 1;         // RC1 defined as input for bluetooth enable
-    TRISC6 = 0;         // RC6 defined as output for UART CH1 transmit
-    TRISC7 = 1;         // RC7 defined as input for UART CH1 receive
+    TRISCbits.TRISC0 = 1; // RC0 defined as input for bluetooth state 
+    TRISCbits.TRISC1 = 0; // RC1 defined as output for bluetooth enable
+    TRISCbits.TRISC6 = 1; // RC6 defined as input for UART CH1 transmit
+    TRISCbits.TRISC7 = 1; // RC7 defined as input for UART CH1 receive
     
-    TRISA3 = 1;         // RA3 defines as input for volume potentiometer
-    TRISC2 = 1;         // RC2 defined as input for DFPlayer busy
-    TRISB3 = 0;         // RB3 defined as output for Speaker mute relais
-    TRISD6 = 0;         // RD6 defined as output for UART CH2 transmit
-    TRISD7 = 1;         // RD7 defined as input for UART CH2 receive
+    TRISAbits.TRISA3 = 1; // RA3 defined as input for volume potentiometer
+    TRISCbits.TRISC2 = 1; // RC2 defined as input for DFPlayer busy
+    TRISBbits.TRISB3 = 0; // RB3 defined as output for Speaker mute relais
+    TRISDbits.TRISD6 = 1; // RD6 defined as input for UART CH2 transmit
+    TRISDbits.TRISD7 = 1; // RD7 defined as input for UART CH2 receive
 }
 
 void Init_ADC(void){
@@ -106,10 +105,6 @@ void Init_Timers(void){
 }
 
 void Init_Interrupts(void){
-    INT0IE = 1;     // Enable external interrupt INT0
-    INTEDG0 = 1;    // Set rising edge
-    INT0IF = 0;     // Clear the flag
-    
     // SPI interrupt initialization
     SSP1IF = 0;     // Clear SPI CH1 interrupt flag
     SSP2IF = 0;     // Clear SPI CH2 interrupt flag
@@ -122,8 +117,8 @@ void Init_Interrupts(void){
     RC2IE = 1;      // Enable UART CH2 receive interrupt
     
     // Timer0 enable
-    TMR0IF = 0;             // Clear interrupt flag
-    TMR0IE = 1;             // Enable Timer0 interrupt
+    TMR0IF = 0;     // Clear interrupt flag
+    TMR0IE = 1;     // Enable Timer0 interrupt
     
     // Global and Peripheral Interrupt initialization
     PEIE = 1;       // Peripheral Interrupt Enable
@@ -146,50 +141,46 @@ void main(void) {
     
     // Calling of Init Functions
     Init_Pins();
+    
+    __delay_ms(100);
+    
+    DISPLAY_RES = 1;
+    
     Init_ADC();
     Init_Timers();
-    Init_Interrupts();
     Init_SPI();
+    SPI_Write_Outputs(0x0000);
     Init_UART();
     Init_Display();
-    Init_HC05();
+    //Init_HC05();
+    Init_Interrupts();
+    
     Init_DFP();
     
-    SPI_Write_Outputs(0x0000);
+    Display_Draw_String(20, 20, "HEY BITCHES", &Font_5x7, WHITE);
+    Display_Update();
 
     while(1){        
-        // Must functions beginning of while loop
-        Sync_Inputs();   
+        Sync_Inputs();
         
         SPI_Write_Outputs(getButtonState());
         
-        if(wasButtonPressed(BUTTON_A_1)){    // Button 1
+        if(wasButtonPressed(BUTTON_A_1)){
             DFP_play_trackMP3(1);
         }
-        if(wasButtonPressed(BUTTON_A_2)){    // Button 2
-            SPEAKER_MUTE = 0;
+        if(wasButtonPressed(BUTTON_A_2)){
+            DFP_play();
         }
-        if(wasButtonPressed(BUTTON_A_3)){    // Button 3
-            SPEAKER_MUTE = 1;
+        if(wasButtonPressed(BUTTON_A_3)){
+            DFP_pause();
         }
-        
-        /*
-        if(button_pressed & 0x0002){
-            Display_Clear();
-            Display_Draw_String(10, 10, "ROSITA TEST", &Font_5x7, WHITE);
-            Display_Update();
-        }
-        */
         
         if(hasVolumeChanged()){
             DFP_specificVolume(getVolumeState());
         }
+        
+        __delay_ms(10);       
     }
     
     return;
 }
-
-
-/*  Input and Output testing block
-        
- */

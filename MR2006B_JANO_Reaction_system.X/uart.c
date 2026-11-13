@@ -24,6 +24,10 @@
  *               TAIL moves forward when the ISR transmits a byte.
  * ========================================================================== */
 
+#define UART_BAUD       9600UL
+// BRG16 = 1, BRGH = 1  ->  n = Fosc / (4 * Baud) - 1, rounded
+#define UART_BRG_VAL    (((_XTAL_FREQ + 2UL * UART_BAUD) / (4UL * UART_BAUD)) - 1)   // = 416 (0x01A0)
+
 volatile static unsigned char UART_tx_buffer1[TX_BUFFER_SIZE];  // Ring buffer to store to be transmitted characters
 volatile static unsigned char UART_tx_head1 = 0;                // Next free slot in ring buffer a character can be written to
 volatile static unsigned char UART_tx_tail1 = 0;                // Last character in ring buffer to be written next
@@ -33,36 +37,20 @@ volatile static unsigned char UART_tx_head2 = 0;                // Next free slo
 volatile static unsigned char UART_tx_tail2 = 0;                // Last character in ring buffer to be written next
 
 void Init_UART(void){
-    // Load definition into registers
+    // Baud rate first, then enable the port (datasheet order)
+    BAUDCON1bits.BRG16 = 1;
+    BAUDCON2bits.BRG16 = 1;
+
+    SPBRGH1 = (unsigned char)(UART_BRG_VAL >> 8);   // 0x01
+    SPBRG1  = (unsigned char)(UART_BRG_VAL);        // 0xA0
+    SPBRGH2 = (unsigned char)(UART_BRG_VAL >> 8);
+    SPBRG2  = (unsigned char)(UART_BRG_VAL);
+    
+    // Load definitions (BRGH = 1 is set inside TXSTA_def)
     TXSTA1 = TXSTA_def;
     TXSTA2 = TXSTA_def;
     RCSTA1 = RCSTA_def;
     RCSTA2 = RCSTA_def;
-    
-    // Set baud rate generator (9600 baud)
-    int baudSet = (unsigned char)(_XTAL_FREQ / (16UL*9600UL)) - 1;
-    SPBRG1 = baudSet;  
-    SPBRG2 = baudSet;
-}
-
-unsigned char UART_TryWriteRegister1(unsigned char data){
-    if(TX1IF != 0){      // Write data into transmission register TXREG (empty if TX1IF != 0) and return success
-        TXREG1 = data;
-        return 1;
-    }
-    else{               // Register still full, no data can be written
-        return 0;
-    }
-}
-
-unsigned char UART_TryWriteRegister2(unsigned char data){
-    if(TX2IF != 0){      // Write data into transmission register TXREG (empty if TX2IF != 0) and return success
-        TXREG2 = data;
-        return 1;
-    }
-    else{               // Register still full, no data can be written
-        return 0;
-    }
 }
 
 unsigned char UART_Read1(void){
@@ -136,10 +124,21 @@ void UART_ISR_Handler(void){
     }
     
     if(RC1IF){
+        // Clear overrun error to prevent an infinite interrupt loop
+        if (RCSTA1bits.OERR) {
+            RCSTA1bits.CREN = 0;
+            RCSTA1bits.CREN = 1;
+        }
         UART_received_data1 = UART_Read1();
         UART_new_received_message1 = 1;
     }
+    
     if(RC2IF){                       
+        // Clear overrun error to prevent an infinite interrupt loop
+        if (RCSTA2bits.OERR) {
+            RCSTA2bits.CREN = 0;
+            RCSTA2bits.CREN = 1;
+        }
         UART_received_data2 = UART_Read2();
         UART_new_received_message2 = 1;
     }

@@ -43,6 +43,7 @@ void DFP_sendCommand(unsigned char cmd, unsigned char feedback, uint16_t paramet
 }
 
 void DFP_specificVolume(unsigned char vol){
+    if(vol > 30){vol = 30;}
     DFP_sendCommand(DFP_SPECIFY_VOLUME, DFP_NO_FEEDBACK,(uint16_t)vol);
 }
 
@@ -67,15 +68,15 @@ void DFP_play(){
 }
 
 void DFP_reset(){
-    DFP_sendCommand(DFP_RESET, DFP_NO_FEEDBACK, 0x0000);
+    DFP_sendCommand(DFP_RESET, DFP_NO_FEEDBACK, 0x0001);
 }
 
 void DFP_enableDAC(){   // Enables output DAC, for audio jack
-    DFP_sendCommand(DFP_SET_DAC, DFP_NO_FEEDBACK, 0x0001);
+    DFP_sendCommand(DFP_SET_DAC, DFP_NO_FEEDBACK, 0x0000);
 }
 
 void DFP_disableDAC(){  // Disables output DAC, for audio jack
-    DFP_sendCommand(DFP_SET_DAC, DFP_NO_FEEDBACK, 0x0000);
+    DFP_sendCommand(DFP_SET_DAC, DFP_NO_FEEDBACK, 0x0001);
 }
 
 void DFP_set_EQ(dfp_eq_t eq){
@@ -85,17 +86,17 @@ void DFP_set_EQ(dfp_eq_t eq){
 void Init_DFP(void){
     // Startup delay
     SPEAKER_MUTE = 1;   // Muting speaker to prevent popping noises
-    __delay_ms(2000);
+    for(unsigned int i = 0; i < 300; i++){ __delay_ms(10); }   // ~3 s
     // Select SD Card as source
     DFP_sendCommand(DFP_SPECIFY_PLAYBACK_OF_A_DEVICE, DFP_NO_FEEDBACK, DFP_TF_CARD_ONLINE);
     __delay_ms(200);
     // Initialize volume
     DFP_specificVolume(15);
-    __delay_ms(50);
+    __delay_ms(200);
     // Setting EQ
     DFP_set_EQ(DFP_EQ_NORMAL);
-    __delay_ms(50);
-    // Enabling Audio Jack
+    __delay_ms(200);
+    // Enabling Speaker/Audio Jack
     DFP_enableDAC();
-    __delay_ms(50);
+    __delay_ms(200);
 }

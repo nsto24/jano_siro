@@ -151,15 +151,15 @@ unsigned int getButtonReleased(void){
 }
 
 unsigned char isButtonPressed(unsigned int mask){
-    return (btn_state & mask) != 0;
+    return (snap_state & mask) != 0;
 }
 
 unsigned char wasButtonPressed(unsigned int mask){
-    return (btn_pressed & mask) != 0;
+    return (snap_pressed & mask) != 0;
 }
 
 unsigned char wasButtonReleased(unsigned int mask){
-    return (btn_released & mask) != 0;
+    return (snap_released & mask) != 0;
 }
 
 void Buttons_ISR_Handler(void){
@@ -189,7 +189,7 @@ void Buttons_ISR_Handler(void){
         unsigned int raw_vol = Adc_ReadValue();
         
         // Check if value is within certain hysteresis
-        if(raw_vol > (last_raw_vol + 4) || last_raw_vol < (raw_vol + 4)){
+        if(raw_vol > (last_raw_vol + 4) || last_raw_vol > (raw_vol + 4)){
             last_raw_vol = raw_vol;
             
             unsigned char new_vol = (unsigned char)((raw_vol * 30) / 1023);

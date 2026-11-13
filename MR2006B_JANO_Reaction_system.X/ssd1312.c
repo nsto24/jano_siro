@@ -16,55 +16,61 @@ unsigned char SSD1312_Buffer[1024];
 
 void Init_Display(void) {
     // 1. Hardware Reset
-    //DISPLAY_RES = 0;                      
-    __delay_ms(10);                      
-    //DISPLAY_RES = 1;                    
+    DISPLAY_RES = 0;                      
+    __delay_ms(50);                      
+    DISPLAY_RES = 1;                    
     __delay_ms(50);                      
 
-    // 2. Initialization Sequence
-    SPI_Write_Command_Display(SLEEP_MODE_ON);
+    // 2. Lock the bus for a continuous command stream
+    SPI_CS_DISPLAY = 0;                     
+    DISPLAY_DC = 0;                         
+    __delay_us(10);
 
-    SPI_Write_Command_Display(SET_DISPLAY_CLOCK_DIV);
-    SPI_Write_Data_Display(0x80);
+    SPI_Write_CH1(SLEEP_MODE_ON);
 
-    SPI_Write_Command_Display(SET_MULTIPLEX_RATIO);
-    SPI_Write_Data_Display(0x3F);        // 64-1
+    SPI_Write_CH1(SET_DISPLAY_CLOCK_DIV);
+    SPI_Write_CH1(0x80);
 
-    SPI_Write_Command_Display(SET_DISP_OFFSET);
-    SPI_Write_Data_Display(0x00);
+    SPI_Write_CH1(SET_MULTIPLEX_RATIO);
+    SPI_Write_CH1(0x3F);
 
-    SPI_Write_Command_Display(SET_DISP_START_LINE | 0x00);
+    SPI_Write_CH1(SET_DISP_OFFSET);
+    SPI_Write_CH1(0x00);
 
-    SPI_Write_Command_Display(CHARGE_PUMP_SETTING);
-    SPI_Write_Data_Display(0x14);        // Enable charge pump
+    SPI_Write_CH1(SET_DISP_START_LINE | 0x00);
 
-    SPI_Write_Command_Display(SET_MEMORY_ADDR_MODE);
-    SPI_Write_Data_Display(0x00);        // Horizontal Addressing Mode
+    SPI_Write_CH1(CHARGE_PUMP_SETTING);
+    SPI_Write_CH1(0x14); 
 
-    SPI_Write_Command_Display(SEGMENT_REMAP_REVERSE);
-    SPI_Write_Command_Display(COM_SCAN_DIR_REVERSE);
+    SPI_Write_CH1(SET_MEMORY_ADDR_MODE);
+    SPI_Write_CH1(0x00); 
 
-    SPI_Write_Command_Display(SET_COM_PINS_HW_CONFIG);
-    SPI_Write_Data_Display(0x12);
+    SPI_Write_CH1(SEGMENT_REMAP_REVERSE);
+    SPI_Write_CH1(COM_SCAN_DIR_REVERSE);
 
-    SPI_Write_Command_Display(SET_CONTRAST);
-    SPI_Write_Data_Display(0xCF);
+    SPI_Write_CH1(SET_COM_PINS_HW_CONFIG);
+    SPI_Write_CH1(0x12);
 
-    SPI_Write_Command_Display(SET_PRECHARGE_PERIOD);
-    SPI_Write_Data_Display(0xF1);
+    SPI_Write_CH1(SET_CONTRAST);
+    SPI_Write_CH1(0xCF);
 
-    SPI_Write_Command_Display(SET_VCOMH_DESELECT);
-    SPI_Write_Data_Display(0x40);
+    SPI_Write_CH1(SET_PRECHARGE_PERIOD);
+    SPI_Write_CH1(0xF1);
 
-    SPI_Write_Command_Display(ENTIRE_DISPLAY_ON_RESUME);
-    SPI_Write_Command_Display(SET_NORMAL_DISPLAY);
+    SPI_Write_CH1(SET_VCOMH_DESELECT);
+    SPI_Write_CH1(0x40);
+
+    SPI_Write_CH1(ENTIRE_DISPLAY_ON_RESUME);
+    SPI_Write_CH1(SET_NORMAL_DISPLAY);
+    SPI_Write_CH1(SLEEP_MODE_OFF);
+
+    // 3. Unlock the bus
+    SPI_CS_DISPLAY = 1;
+    __delay_ms(100); // Give the charge pump time to stabilize
     
-    // 3. Clear RAM and local buffer
+    // 4. Clear RAM and local buffer
     Display_Clear();
     Display_Update();
-
-    // 4. Power On
-    SPI_Write_Command_Display(SLEEP_MODE_OFF);
 }
 
 void Display_Clear(void) {
@@ -75,17 +81,23 @@ void Display_Clear(void) {
 }
 
 void Display_Update(void) {
-    // Set column window (0 to 127)
-    SPI_Write_Command_Display(SET_COLUMN_ADDR);
-    SPI_Write_Data_Display(0);
-    SPI_Write_Data_Display(SSD1312_PX_WIDTH - 1);
+    // Continuous 3-byte command for Column Address
+    SPI_CS_DISPLAY = 0;
+    DISPLAY_DC = 0;
+    SPI_Write_CH1(SET_COLUMN_ADDR);
+    SPI_Write_CH1(0);
+    SPI_Write_CH1(SSD1312_PX_WIDTH - 1);
+    SPI_CS_DISPLAY = 1;
 
-    // Set page window (0 to 7)
-    SPI_Write_Command_Display(SET_PAGE_ADDR);
-    SPI_Write_Data_Display(0);
-    SPI_Write_Data_Display((SSD1312_PX_HEIGHT / 8) - 1);
+    // Continuous 3-byte command for Page Address
+    SPI_CS_DISPLAY = 0;
+    DISPLAY_DC = 0;
+    SPI_Write_CH1(SET_PAGE_ADDR);
+    SPI_Write_CH1(0);
+    SPI_Write_CH1((SSD1312_PX_HEIGHT / 8) - 1);
+    SPI_CS_DISPLAY = 1;
 
-    // Push the entire 1024-byte buffer to the OLED in one continuous transmission
+    // Push the entire 1024-byte pixel buffer
     SPI_Write_Data_Array_Display(SSD1312_Buffer, 1024);
 }
 

@@ -15,7 +15,7 @@ void Init_SPI(void){
     SSP2STAT = SSPSTAT_def;
     
     SSP1CON1 = SSPCON1_def;
-    SSP2CON1 = SSPCON1_def;
+    SSP2CON1 = SSPCON2_def;
     
     SSP1IF = 0;       // Clear SSP1IF flag (no data received)
     SSP2IF = 0;       // Clear SSP1IF flag (no data received)
@@ -25,7 +25,6 @@ void Init_SPI(void){
     SPI_CS_OUTPUTS = 1;
     SPI_CS_INPUTS = 1;
     SPI_CS_INPUTS_SNAP = 0;
-    SPI_CS_CANBUS = 1;
 }
 
 // SPI elementary write and read functions
@@ -66,11 +65,9 @@ void SPI_Write_Outputs(unsigned int data){
     // High byte is written first (shift register further from PIC)
     // Low byte is written second (shift register closer to PIC)
     SPI_CS_OUTPUTS = 0;                     // Pull pin of outputs to low (active slave)
-    
     __delay_us(20);
     SPI_Write_CH1((data >> 8) & 0x00FF);    // Writing high byte to slave
     SPI_Write_CH1(data & 0x00FF);           // Writing low byte to slave
-    __delay_ms(10);                         // Wait writing
     SPI_CS_OUTPUTS = 1;                     // Pull pin of outputs to high (deactive slave)
 }
 
@@ -95,25 +92,24 @@ unsigned int SPI_Read_Inputs(void){
 }
 
 void SPI_Write_Command_Display(unsigned char cmd){
-    SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     DISPLAY_DC = 0;                         // Set display to "read command" mode
+    SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     __delay_us(20);
     SPI_Write_CH1(cmd);                     // Write command on SPI Bus
     SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
 void SPI_Write_Data_Display(unsigned char data){
+    DISPLAY_DC = 1;                         // Set display to "read data" mode
     SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     __delay_us(20);
-    DISPLAY_DC = 1;                         // Set display to "read data" mode
     SPI_Write_CH1(data);                    // Write command on SPI Bus
     SPI_CS_DISPLAY = 1;                     // Pull pin of inputs to high (deactive slave)
 }
 
 void SPI_Write_Data_Array_Display(unsigned char* data, unsigned int length){
-    SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
-    __delay_us(20);
     DISPLAY_DC = 1;                         // Set display to "read data" mode
+    SPI_CS_DISPLAY = 0;                     // Pull pin of inputs to low (active slave)
     __delay_us(20);
     for(unsigned int i = 0; i < length; i++){
         SPI_Write_CH1(data[i]);             // Write command on SPI Bus

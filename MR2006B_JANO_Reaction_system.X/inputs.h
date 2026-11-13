@@ -30,10 +30,6 @@
 #define BUTTON_C_2          0x0200
 #define BUTTON_C_3          0x0400
 #define BUTTON_C_4          0x0800
-#define BUTTON_D_1          0x1000
-#define BUTTON_D_2          0x2000
-#define BUTTON_D_3          0x4000
-#define BUTTON_D_4          0x8000
 
 // Global variable definition
 typedef struct{
