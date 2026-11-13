@@ -10,19 +10,18 @@
 #include "uart.h"
 #include <string.h>
 
-#define HC05_TARGET_BT_ADRESS_1     0x0e4a 
-#define HC05_TARGET_BT_ADRESS_2     0x35
-#define HC05_TARGET_BT_ADRESS_3     0xdc7af5
+#define HC05_TARGET_BT_ADRESS_1     0x582A
+#define HC05_TARGET_BT_ADRESS_2     0xBD
+#define HC05_TARGET_BT_ADRESS_3     0x74434A
+
+#define UART_BAUD       9600UL
+// BRG16 = 1, BRGH = 1  ->  n = Fosc / (4 * Baud) - 1, rounded
+#define UART_BRG_VAL    (((_XTAL_FREQ + 2UL * UART_BAUD) / (4UL * UART_BAUD)) - 1)   // = 416 (0x01A0)
+// Pre-calculate the 38400 baud rate value using the 16-bit High-Speed formula (Divisor = 4)
+#define UART_BAUD_AT         38400UL
+#define UART_BRG_AT_VAL      (((_XTAL_FREQ + 2UL * UART_BAUD_AT) / (4UL * UART_BAUD_AT)) - 1)
 
 void Init_HC05(void){
-    /* Process of initialization
-     * 
-     * 1. Pull "KEY" pin of HC-05 to high to enter AT command mode
-     * 2. Reinitialize Baud rate of UART port to 38400 baud
-     * 3. Send AT commands to initialize module as master
-     * 4. Drop "KEY" pin of HC-05 back to low and reconfigure baud rate to standard
-     */
-    // Variable definition
     char bind_cmd[40] = "AT+BIND=";
     char target_adr[30];
     
@@ -33,8 +32,11 @@ void Init_HC05(void){
     // Pull KEY pin to high
     HC05_ENABLE_KEY = 1;
     
-    // Reconfigure baud rate to 38400
-    SPBRG = (_XTAL_FREQ / (16UL*38400UL)) - 1;     // 38400 baud at 8MHz
+    // ---------------------------------------------------------
+    // Reconfigure baud rate to 38400 (Writing both High and Low bytes)
+    // ---------------------------------------------------------
+    SPBRGH1 = (unsigned char)(UART_BRG_AT_VAL >> 8);
+    SPBRG1  = (unsigned char)(UART_BRG_AT_VAL);
     
     // Send AT commands to HC-05 module
     UART_WriteString1("AT\r\n");                    // Initializing AT-Command transfer
@@ -45,13 +47,17 @@ void Init_HC05(void){
     __delay_ms(200);
     UART_WriteString1(bind_cmd);                    // Setting BT adress of slave
     __delay_ms(200);
-    UART_WriteString1("AT+UART=9600,0,0\r\n");      // Setting baud rate of later data transfers to 9600 (standard UART speed)
+    UART_WriteString1("AT+UART=9600,0,0\r\n");      // Setting baud rate of later data transfers to 9600
     __delay_ms(200);
     UART_WriteString1("AT+RESET\r\n");              // Reset and exit AT mode
     __delay_ms(500);
     
     // Pull KEY pin back to ground
     HC05_ENABLE_KEY = 0;
-    // Restore baud rate of 9600
-    SPBRG = (_XTAL_FREQ / (16UL*9600UL)) - 1;
+    
+    // ---------------------------------------------------------
+    // Restore baud rate of 9600 (Writing both High and Low bytes)
+    // ---------------------------------------------------------
+    SPBRGH1 = (unsigned char)(UART_BRG_VAL >> 8);   // Assuming UART_BRG_VAL is available globally or redefined here
+    SPBRG1  = (unsigned char)(UART_BRG_VAL);
 }

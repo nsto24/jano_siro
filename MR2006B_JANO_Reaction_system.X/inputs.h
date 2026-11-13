@@ -35,6 +35,7 @@
 typedef struct{
     int x;
     int y;
+    char sw;
 } joystick_t;
 
 typedef enum{
@@ -69,7 +70,7 @@ joystick_t readJoystick(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: char</b></p>
  */
-char isJoyStickLeft(void);
+unsigned char isJoyStickLeft(void);
 
 /**
     <p><b>Function prototype: char isJoyStickRight(void){}</b></p>
@@ -78,7 +79,7 @@ char isJoyStickLeft(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: char</b></p>
  */
-char isJoyStickRight(void);
+unsigned char isJoyStickRight(void);
 
 /**
     <p><b>Function prototype: char isJoyStickUp(void){}</b></p>
@@ -87,7 +88,7 @@ char isJoyStickRight(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: char</b></p>
  */
-char isJoyStickUp(void);
+unsigned char isJoyStickUp(void);
 
 /**
     <p><b>Function prototype: char isJoyStickDown(void){}</b></p>
@@ -96,7 +97,7 @@ char isJoyStickUp(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: char</b></p>
  */
-char isJoyStickDown(void);
+unsigned char isJoyStickDown(void);
 
 /**
     <p><b>Function prototype: char isJoyStickIdle(void){}</b></p>
@@ -105,9 +106,7 @@ char isJoyStickDown(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: char</b></p>
  */
-char isJoyStickIdle(void);
-
-joystick_state_t getJoystickState(void);
+unsigned char isJoyStickIdle(void);
 
 /**
     <p><b>Function prototype: char isJoyStickPressed(void){}</b></p>
@@ -116,7 +115,7 @@ joystick_state_t getJoystickState(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: char</b></p>
  */
-char isJoyStickPressed(void);
+unsigned char isJoyStickPressed(void);
 
 /**
     <p><b>Function prototype: float JoyStickAxisXpercent(void){}</b></p>
@@ -125,7 +124,7 @@ char isJoyStickPressed(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: float</b></p>
  */
-float JoyStickAxisXpercent(void);
+float getJoyStickAxisXpercent(void);
 
 /**
     <p><b>Function prototype: float JoyStickAxisYpercent(void){}</b></p>
@@ -134,7 +133,7 @@ float JoyStickAxisXpercent(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: float</b></p>
  */
-float JoyStickAxisYpercent(void);
+float getJoyStickAxisYpercent(void);
 
 /**
     <p><b>Function prototype: float JoyStickPitchAxisXpercent(void){}</b></p>
@@ -143,7 +142,7 @@ float JoyStickAxisYpercent(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: float</b></p>
  */
-float JoyStickPitchAxisXpercent(void);
+float getJoyStickPitchAxisXpercent(void);
 
 /**
     <p><b>Function prototype: float JoyStickPitchAxisYpercent(void){}</b></p>
@@ -152,6 +151,9 @@ float JoyStickPitchAxisXpercent(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: float</b></p>
  */
+
+joystick_state_t getJoystickState(void);
+
 float JoyStickPitchAxisYpercent(void);
 
 unsigned char getVolumeState(void);

@@ -17,6 +17,8 @@
 #include "adc_functions.h"
 #include "inputs.h"
 
+#include <string.h>
+
 volatile unsigned char UART_received_data1;
 volatile unsigned char UART_new_received_message1 = 0;
 volatile unsigned char UART_received_data2;
@@ -138,6 +140,7 @@ void __interrupt() Interrupts(void){
 void main(void) {
     // Local variable definition
     unsigned char firstCycleFlag = 1;
+    unsigned char buf[20] = {0};
     
     // Calling of Init Functions
     Init_Pins();
@@ -154,11 +157,8 @@ void main(void) {
     Init_Display();
     //Init_HC05();
     Init_Interrupts();
-    
     Init_DFP();
-    
-    Display_Draw_String(20, 20, "HEY BITCHES", &Font_5x7, WHITE);
-    Display_Update();
+      
 
     while(1){        
         Sync_Inputs();
@@ -174,10 +174,21 @@ void main(void) {
         if(wasButtonPressed(BUTTON_A_3)){
             DFP_pause();
         }
+        if(wasButtonPressed(BUTTON_C_4)){
+            SPEAKER_MUTE = 1;
+        }
+        if(wasButtonPressed(BUTTON_C_3)){
+            SPEAKER_MUTE = 0;
+        }
         
         if(hasVolumeChanged()){
             DFP_specificVolume(getVolumeState());
         }
+        
+        Display_Draw_String(5, 5, "Initialized", &Font_5x7, WHITE);
+        sprintf(buf, "x:%2.1f y:%2.1f sw:%1d", getJoyStickAxisXpercent(), getJoyStickAxisYpercent(), isJoyStickPressed());
+        Display_Draw_String(5, 20, buf, &Font_5x7, WHITE);
+        Display_Update();
         
         __delay_ms(10);       
     }

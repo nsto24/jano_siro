@@ -1,7 +1,7 @@
 /*
  * File:                input.c
  * Author:              Nicolas Stock
- * Comments:            
+ * Comments:            Integrated Joystick into ISR and Snapshot architecture
  * Revision history:    31.08.2026, 17:59
  */
 
@@ -20,72 +20,66 @@ volatile unsigned int btn_pressed = 0;      // Saves which buttons were newly pr
 volatile unsigned int btn_released = 0;     // Saves which buttons were released on last read
 volatile unsigned char vol_live = 0;        // Saves current volume
 volatile unsigned char vol_changed_live = 0;// Saves flag if volume has changed from last reading
+volatile joystick_t joy_live = {0, 0, 0};   // Saves state of Joystick 
+volatile unsigned char joy_sw_pressed_live = 0;  
+volatile unsigned char joy_sw_released_live = 0; 
+
 // Snapshot variables for the main loop
 static unsigned int snap_state = 0;
 static unsigned int snap_pressed = 0;
 static unsigned int snap_released = 0;
-static unsigned char vol_snap = 0;
-static unsigned char vol_changed_snap = 0;
+static unsigned char snap_vol = 0;
+static unsigned char snap_vol_changed = 0;
+static joystick_t snap_joy = {0, 0, 0};
+static unsigned char snap_joy_sw_pressed = 0;    
+static unsigned char snap_joy_sw_released = 0;   
 
 
-// Functions for Joystick reading
+// ==========================================================================
+// Functions for Joystick evaluation (Using Snapshot Data)
+// ==========================================================================
 
-joystick_t readJoystick(void){
-    joystick_t res;
-    Adc_SetChannel(ADC_CH_JOYSTICK_X);
-    res.x = Adc_ReadValue();
-    Adc_SetChannel(ADC_CH_JOYSTICK_Y);
-    res.y = Adc_ReadValue();
-    return res;
+unsigned char isJoyStickLeft(){
+    return ((snap_joy.x > (1023 * JOYSTICK_MID_MIN) && snap_joy.x < (1023 * JOYSTICK_MID_MAX)) && (snap_joy.y < (1023 * JOYSTICK_MIN)));
 }
 
-char isJoyStickLeft(){
-    joystick_t read = readJoystick();
-    return ((read.x > (1023*JOYSTICK_MID_MIN) && read.x < (1023*JOYSTICK_MID_MAX)) && (read.y < (1023*JOYSTICK_MIN)));
+unsigned char isJoyStickRight(){
+    return ((snap_joy.x > (1023 * JOYSTICK_MID_MIN) && snap_joy.x < (1023 * JOYSTICK_MID_MAX)) && (snap_joy.y > (1023 * JOYSTICK_MAX)));
 }
 
-char isJoyStickRight(){
-    joystick_t read = readJoystick();
-    return ((read.x > (1023*JOYSTICK_MID_MIN) && read.x < (1023*JOYSTICK_MID_MAX)) && (read.y > (1023*JOYSTICK_MAX)));
+unsigned char isJoyStickUp(){
+    return ((snap_joy.x > (1023 * JOYSTICK_MAX)) && (snap_joy.y > (1023 * JOYSTICK_MID_MIN) && snap_joy.y < (1023 * JOYSTICK_MID_MAX)));
 }
 
-char isJoyStickUp(){
-    joystick_t read = readJoystick();
-    return ((read.x > (1023*JOYSTICK_MAX)) && (read.y > (1023*JOYSTICK_MID_MIN) && read.y < (1023*JOYSTICK_MID_MAX)));
+unsigned char isJoyStickDown(){
+    return ((snap_joy.x < (1023 * JOYSTICK_MIN)) && (snap_joy.y > (1023 * JOYSTICK_MID_MIN) && snap_joy.y < (1023 * JOYSTICK_MID_MAX)));
 }
 
-char isJoyStickDown(){
-    joystick_t read = readJoystick();
-    return ((read.x < (1023*JOYSTICK_MIN)) && (read.y > (1023*JOYSTICK_MID_MIN) && read.y < (1023*JOYSTICK_MID_MAX)));
+unsigned char isJoyStickIdle(){
+    return ((snap_joy.x > (1023 * JOYSTICK_MIN)) && (snap_joy.x < (1023 * JOYSTICK_MAX)) && (snap_joy.y > (1023 * JOYSTICK_MID_MIN) && snap_joy.y < (1023 * JOYSTICK_MID_MAX)));
 }
 
-char isJoyStickIdle(){
-    joystick_t read = readJoystick();
-    return ((read.x > (1023*JOYSTICK_MIN)) && (read.x < (1023*JOYSTICK_MAX)) && (read.y > (1023*JOYSTICK_MID_MIN) && read.y < (1023*JOYSTICK_MID_MAX)));
+unsigned char isJoyStickPressed(){
+    // Read from the synchronized snapshot, not the live pin
+    if(snap_joy.sw != 0){ return 1; }
+    else{ return 0; }
 }
 
-char isJoyStickPressed(){
-    if(JOYSTICK_SW !=0){return 1;}
-    else{return 0;}
+float getJoyStickAxisXpercent(){
+    return snap_joy.x / 1024.0;
 }
 
-float JoyStickAxisXpercent(){
-    joystick_t read = readJoystick();
-    return read.x/1024.0;
+float getJoyStickAxisYpercent(){
+    return snap_joy.y / 1024.0;
 }
 
-float JoyStickAxisYpercent(){
-    joystick_t read = readJoystick();
-    return read.y/1024.0;
-}
-
-float JoyStickPitchAxisXpercent(){
-    float x = JoyStickAxisXpercent();
+float getJoyStickPitchAxisXpercent(){
+    float x = getJoyStickAxisXpercent();
     return (x * 2.0) - 1.0;
 }
 
-float JoyStickPitchAxisYpercent(){
-    float y = JoyStickAxisYpercent();
+float getJoyStickPitchAxisYpercent(){
+    float y = getJoyStickAxisYpercent();
     return (y * 2.0) - 1.0;
 }
 
@@ -96,58 +90,70 @@ joystick_state_t getJoystickState(){
     else if(isJoyStickUp()){return JOY_UP;}
     else if(isJoyStickDown()){return JOY_DOWN;}
     else if(isJoyStickPressed()){return JOY_PRESSED;}
+    return JOY_IDLE; // Fallback
 }
 
+unsigned char wasJoystickPressed(){
+    return snap_joy_sw_pressed;
+}
+
+unsigned char wasJoystickReleased(){
+    return snap_joy_sw_released;
+}
+
+// ==========================================================================
 // Functions for Volume Potentiometer reading
+// ==========================================================================
 
 unsigned char getVolumeState(void) {
-    return vol_snap;
+    return snap_vol;
 }
 
 unsigned char hasVolumeChanged(void) {
-    return vol_changed_snap;
+    return snap_vol_changed;
 }
 
-// Functions for Reading of buttons
+
+// ==========================================================================
+// Functions for Reading of buttons and Syncing
+// ==========================================================================
 
 void Sync_Inputs(void) {
     GIE = 0;                            // Disable interrupts for atomic transfer
+    
     // Button snaps
-    snap_state = btn_state;             // Copy absolute state
-    snap_pressed = btn_pressed;         // Copy edge flags
-    btn_pressed = 0;                    // Clear live edge flags safely
+    snap_state = btn_state;             
+    snap_pressed = btn_pressed;         
+    btn_pressed = 0;                    
     snap_released = btn_released;
     btn_released = 0;
+    
     // Volume snaps
-    vol_snap = vol_live;
-    vol_changed_snap = vol_changed_live;
-    vol_changed_live = 0;               // Clear the live flag safely
+    snap_vol = vol_live;
+    snap_vol_changed = vol_changed_live;
+    vol_changed_live = 0;               
+    
+    // Joystick snaps
+    snap_joy = joy_live;                
+    snap_joy_sw_pressed = joy_sw_pressed_live;
+    joy_sw_pressed_live = 0;            // Clear live flag safely
+    snap_joy_sw_released = joy_sw_released_live;
+    joy_sw_released_live = 0;           // Clear live flag safely
     
     GIE = 1;                            // Re-enable interrupts
 }
 
 unsigned int getButtonState(void){
-    unsigned int temp = 0;
-    GIE = 0;                    // Disable global interrupts
-    temp = btn_state;           
-    GIE = 1;                    // Enable global interrupts
-    return temp;
+    // Reading from snap_state does not require GIE disabling since Sync_Inputs handles it
+    return snap_state;
 }
 
 unsigned int getButtonPressed(void){
-    unsigned int temp = 0;
-    GIE = 0;                    // Disable global interrupts
-    temp = btn_pressed;           
-    GIE = 1;                    // Enable global interrupts
-    return temp;
+    return snap_pressed;
 }
 
 unsigned int getButtonReleased(void){
-    unsigned int temp = 0;
-    GIE = 0;                    // Disable global interrupts
-    temp = btn_released;           
-    GIE = 1;                    // Enable global interrupts
-    return temp;
+    return snap_released;
 }
 
 unsigned char isButtonPressed(unsigned int mask){
@@ -162,15 +168,21 @@ unsigned char wasButtonReleased(unsigned int mask){
     return (snap_released & mask) != 0;
 }
 
+
+// ==========================================================================
+// Timer0 Interrupt Service Routine (10ms Tick)
+// ==========================================================================
+
 void Buttons_ISR_Handler(void){
     if(TMR0IE && TMR0IF){
         unsigned int btn_raw = 0;
+        joystick_t joy_raw = {0,0,0};
 
         // Reset Timer0 registers for the next 10ms tick
         TMR0H = TMR0H_VAL;
         TMR0L = TMR0L_VAL;
 
-        // Reading buttons from input register
+        // 1. Reading buttons from input register (SPI)
         btn_raw = SPI_Read_Inputs();
 
         // Analysing rising edges:  Set if one bit is set among last and raw and raw is set
@@ -182,7 +194,7 @@ void Buttons_ISR_Handler(void){
         // Writing the read button states into the current state variable
         btn_state = btn_raw;
         
-        // Volume reading
+        // 2. Volume reading (ADC)
         static unsigned int last_raw_vol = 0;
         
         Adc_SetChannel(ADC_CH_VOLUME);
@@ -198,6 +210,25 @@ void Buttons_ISR_Handler(void){
                 vol_changed_live = 1; // Flag that a mathematical change occurred
             }
         }
+        
+        // 3. Read Joystick (ADC + Digital)
+        Adc_SetChannel(ADC_CH_JOYSTICK_X);
+        joy_raw.x = Adc_ReadValue();
+        
+        Adc_SetChannel(ADC_CH_JOYSTICK_Y);
+        joy_raw.y = Adc_ReadValue();
+        
+        // Joystick is switching against ground (so it is inverted here )
+        joy_raw.sw = (JOYSTICK_SW == 0) ? 1 : 0; 
+        
+        // Analysing rising edge (Pressed): Set if last was 0 and raw is 1
+        joy_sw_pressed_live |= (joy_live.sw ^ joy_raw.sw) & joy_raw.sw;
+        
+        // Analysing falling edge (Released): Set if last was 1 and raw is 0
+        joy_sw_released_live |= (joy_live.sw ^ joy_raw.sw) & ~joy_raw.sw;
+        
+        // Write the local raw struct to the live global struct
+        joy_live = joy_raw;
 
         // Clearing interrupt flag
         TMR0IF = 0;
