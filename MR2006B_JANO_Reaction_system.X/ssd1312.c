@@ -99,6 +99,7 @@ void Display_Update(void) {
 
     // Push the entire 1024-byte pixel buffer
     SPI_Write_Data_Array_Display(SSD1312_Buffer, 1024);
+    FLAG_redraw_display = 0;
 }
 
 void Display_Draw_Pixel(unsigned int x, unsigned int y, unsigned char color) {
@@ -204,13 +205,13 @@ void Display_Draw_Icon(unsigned int x, unsigned int y, unsigned int width, unsig
 }
 
 void Display_Draw_Headbar() {
-    // 1. Draw horizontal separator at Y=10
+    // 1. Draw horizontal separator at Y=DISPLAY_HEADBAR_WIDTH
     for (unsigned int x = 0; x < SSD1312_PX_WIDTH; x++) {
-        Display_Draw_Pixel(x, 10, WHITE);
+        Display_Draw_Pixel(x, DISPLAY_HEADBAR_WIDTH, WHITE);
     }
     
-    // 2. Draw static text (assuming you have a font pointer like &Font5x7)
-    Display_Draw_String(0, 1, "SIRO de Rosita", &Font5x7, WHITE);
+    // 2. Draw static text 
+    Display_Draw_String(0, 1, "SIRO de Rosita", &Font_5x7, WHITE);
     
     // 3. Draw dynamic icons (Right-aligned)
     if(HC05_STATE){

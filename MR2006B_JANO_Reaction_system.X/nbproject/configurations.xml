@@ -35,7 +35,6 @@
       <itemPath>mode_random.c</itemPath>
       <itemPath>mode_holdrelease.c</itemPath>
       <itemPath>mode_vehiclecontrol.c</itemPath>
-      <itemPath>mode_chain.c</itemPath>
       <itemPath>menu_machine.c</itemPath>
       <itemPath>adc_functions.c</itemPath>
       <itemPath>inputs.c</itemPath>

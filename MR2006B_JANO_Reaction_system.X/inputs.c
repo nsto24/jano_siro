@@ -1,8 +1,8 @@
 /*
- * File:                input.c
- * Author:              Nicolas Stock
- * Comments:            Integrated Joystick into ISR and Snapshot architecture
- * Revision history:    31.08.2026, 17:59
+- File:                input.c
+- Author:              Nicolas Stock
+- Comments:            Integrated Joystick into ISR and Snapshot architecture
+- Revision history:    31.08.2026, 17:59
  */
 
 // #includes
@@ -11,6 +11,13 @@
 #include "mcu_config.h"
 #include "adc_functions.h"
 #include "spi_functions.h"
+
+// Compile-time integer ADC thresholds for Joystick evaluation
+#define JOY_TH_MIN          ((unsigned int)(1023.0 * JOYSTICK_MIN))
+#define JOY_TH_MAX          ((unsigned int)(1023.0 * JOYSTICK_MAX))
+#define JOY_TH_MID_MIN      ((unsigned int)(1023.0 * JOYSTICK_MID_MIN))
+#define JOY_TH_MID_MAX      ((unsigned int)(1023.0 * JOYSTICK_MID_MAX))
+#define JOY_HYSTERESIS      15u
 
 // Variable definition
 
@@ -23,6 +30,8 @@ volatile unsigned char vol_changed_live = 0;// Saves flag if volume has changed 
 volatile joystick_t joy_live = {0, 0, 0};   // Saves state of Joystick 
 volatile unsigned char joy_sw_pressed_live = 0;  
 volatile unsigned char joy_sw_released_live = 0; 
+volatile joystick_state_t joy_dir_live = JOY_IDLE;
+volatile joystick_state_t joy_dir_edge_live = JOY_IDLE;
 
 // Snapshot variables for the main loop
 static unsigned int snap_state = 0;
@@ -33,73 +42,136 @@ static unsigned char snap_vol_changed = 0;
 static joystick_t snap_joy = {0, 0, 0};
 static unsigned char snap_joy_sw_pressed = 0;    
 static unsigned char snap_joy_sw_released = 0;   
+static joystick_state_t snap_joy_dir = JOY_IDLE;
+static joystick_state_t snap_joy_dir_edge = JOY_IDLE;
 
 
 // ==========================================================================
 // Functions for Joystick evaluation (Using Snapshot Data)
 // ==========================================================================
 
-unsigned char isJoyStickLeft(){
-    return ((snap_joy.x > (1023 * JOYSTICK_MID_MIN) && snap_joy.x < (1023 * JOYSTICK_MID_MAX)) && (snap_joy.y < (1023 * JOYSTICK_MIN)));
+static joystick_state_t evaluateJoystickDirection(unsigned int x, unsigned int y, joystick_state_t currentDir){
+    // Apply hysteresis release thresholds if already active in a cardinal direction
+    switch(currentDir){
+        case JOY_LEFT:
+            if(y < (JOY_TH_MIN + JOY_HYSTERESIS)){ return JOY_LEFT; }
+            break;
+        case JOY_RIGHT:
+            if(y > (JOY_TH_MAX - JOY_HYSTERESIS)){ return JOY_RIGHT; }
+            break;
+        case JOY_UP:
+            if(x > (JOY_TH_MAX - JOY_HYSTERESIS)){ return JOY_UP; }
+            break;
+        case JOY_DOWN:
+            if(x < (JOY_TH_MIN + JOY_HYSTERESIS)){ return JOY_DOWN; }
+            break;
+        default:
+            break;
+    }
+
+    // Evaluate entry thresholds
+    if((x > JOY_TH_MID_MIN && x < JOY_TH_MID_MAX) && (y < JOY_TH_MIN)){
+        return JOY_LEFT;
+    }
+    if((x > JOY_TH_MID_MIN && x < JOY_TH_MID_MAX) && (y > JOY_TH_MAX)){
+        return JOY_RIGHT;
+    }
+    if((x > JOY_TH_MAX) && (y > JOY_TH_MID_MIN && y < JOY_TH_MID_MAX)){
+        return JOY_UP;
+    }
+    if((x < JOY_TH_MIN) && (y > JOY_TH_MID_MIN && y < JOY_TH_MID_MAX)){
+        return JOY_DOWN;
+    }
+
+    return JOY_IDLE;
 }
 
-unsigned char isJoyStickRight(){
-    return ((snap_joy.x > (1023 * JOYSTICK_MID_MIN) && snap_joy.x < (1023 * JOYSTICK_MID_MAX)) && (snap_joy.y > (1023 * JOYSTICK_MAX)));
+unsigned char isJoyStickLeft(void){
+    return (snap_joy_dir == JOY_LEFT);
 }
 
-unsigned char isJoyStickUp(){
-    return ((snap_joy.x > (1023 * JOYSTICK_MAX)) && (snap_joy.y > (1023 * JOYSTICK_MID_MIN) && snap_joy.y < (1023 * JOYSTICK_MID_MAX)));
+unsigned char isJoyStickRight(void){
+    return (snap_joy_dir == JOY_RIGHT);
 }
 
-unsigned char isJoyStickDown(){
-    return ((snap_joy.x < (1023 * JOYSTICK_MIN)) && (snap_joy.y > (1023 * JOYSTICK_MID_MIN) && snap_joy.y < (1023 * JOYSTICK_MID_MAX)));
+unsigned char isJoyStickUp(void){
+    return (snap_joy_dir == JOY_UP);
 }
 
-unsigned char isJoyStickIdle(){
-    return ((snap_joy.x > (1023 * JOYSTICK_MIN)) && (snap_joy.x < (1023 * JOYSTICK_MAX)) && (snap_joy.y > (1023 * JOYSTICK_MID_MIN) && snap_joy.y < (1023 * JOYSTICK_MID_MAX)));
+unsigned char isJoyStickDown(void){
+    return (snap_joy_dir == JOY_DOWN);
 }
 
-unsigned char isJoyStickPressed(){
+unsigned char isJoyStickIdle(void){
+    return (snap_joy_dir == JOY_IDLE);
+}
+
+unsigned char isJoyStickPressed(void){
     // Read from the synchronized snapshot, not the live pin
     if(snap_joy.sw != 0){ return 1; }
     else{ return 0; }
 }
 
-float getJoyStickAxisXpercent(){
+float getJoyStickAxisXpercent(void){
     return snap_joy.x / 1024.0;
 }
 
-float getJoyStickAxisYpercent(){
+float getJoyStickAxisYpercent(void){
     return snap_joy.y / 1024.0;
 }
 
-float getJoyStickPitchAxisXpercent(){
+float getJoyStickPitchAxisXpercent(void){
     float x = getJoyStickAxisXpercent();
     return (x * 2.0) - 1.0;
 }
 
-float getJoyStickPitchAxisYpercent(){
+float getJoyStickPitchAxisYpercent(void){
     float y = getJoyStickAxisYpercent();
     return (y * 2.0) - 1.0;
 }
 
-joystick_state_t getJoystickState(){
-    if(isJoyStickIdle()){return JOY_IDLE;}
+joystick_state_t getJoystickState(void){
+    if(isJoyStickPressed()){return JOY_PRESSED;}
+    else if(isJoyStickIdle()){return JOY_IDLE;}
     else if(isJoyStickRight()){return JOY_RIGHT;}
     else if(isJoyStickLeft()){return JOY_LEFT;}
     else if(isJoyStickUp()){return JOY_UP;}
     else if(isJoyStickDown()){return JOY_DOWN;}
-    else if(isJoyStickPressed()){return JOY_PRESSED;}
     return JOY_IDLE; // Fallback
 }
 
-unsigned char wasJoystickPressed(){
+joystick_state_t getJoystickDirection(void){
+    return snap_joy_dir;
+}
+
+joystick_state_t getJoystickDirectionEdge(void){
+    return snap_joy_dir_edge;
+}
+
+unsigned char wasJoystickLeft(void){
+    return (snap_joy_dir_edge == JOY_LEFT);
+}
+
+unsigned char wasJoystickRight(void){
+    return (snap_joy_dir_edge == JOY_RIGHT);
+}
+
+unsigned char wasJoystickUp(void){
+    return (snap_joy_dir_edge == JOY_UP);
+}
+
+unsigned char wasJoystickDown(void){
+    return (snap_joy_dir_edge == JOY_DOWN);
+}
+
+unsigned char wasJoystickPressed(void){
     return snap_joy_sw_pressed;
 }
 
-unsigned char wasJoystickReleased(){
+unsigned char wasJoystickReleased(void){
     return snap_joy_sw_released;
 }
+
 
 // ==========================================================================
 // Functions for Volume Potentiometer reading
@@ -139,6 +211,9 @@ void Sync_Inputs(void) {
     joy_sw_pressed_live = 0;            // Clear live flag safely
     snap_joy_sw_released = joy_sw_released_live;
     joy_sw_released_live = 0;           // Clear live flag safely
+    snap_joy_dir = joy_dir_live;
+    snap_joy_dir_edge = joy_dir_edge_live;
+    joy_dir_edge_live = JOY_IDLE;       // Clear live direction edge safely
     
     GIE = 1;                            // Re-enable interrupts
 }
@@ -226,6 +301,15 @@ void Buttons_ISR_Handler(void){
         
         // Analysing falling edge (Released): Set if last was 1 and raw is 0
         joy_sw_released_live |= (joy_live.sw ^ joy_raw.sw) & ~joy_raw.sw;
+        
+        // Analysing direction edges with hysteresis
+        joystick_state_t new_joy_dir = evaluateJoystickDirection((unsigned int)joy_raw.x, (unsigned int)joy_raw.y, joy_dir_live);
+        if(new_joy_dir != joy_dir_live){
+            if(new_joy_dir != JOY_IDLE){
+                joy_dir_edge_live = new_joy_dir;
+            }
+            joy_dir_live = new_joy_dir;
+        }
         
         // Write the local raw struct to the live global struct
         joy_live = joy_raw;

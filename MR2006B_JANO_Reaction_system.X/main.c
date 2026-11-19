@@ -24,7 +24,7 @@ volatile unsigned char UART_new_received_message1 = 0;
 volatile unsigned char UART_received_data2;
 volatile unsigned char UART_new_received_message2 = 0;
 
-static unsigned char last_volume = 0;
+volatile unsigned char FLAG_redraw_display = 0;
 
 // Global variable definition
 typedef enum states{
@@ -188,7 +188,13 @@ void main(void) {
         Display_Draw_String(5, 5, "Initialized", &Font_5x7, WHITE);
         sprintf(buf, "x:%2.1f y:%2.1f sw:%1d", getJoyStickAxisXpercent(), getJoyStickAxisYpercent(), isJoyStickPressed());
         Display_Draw_String(5, 20, buf, &Font_5x7, WHITE);
-        Display_Update();
+        FLAG_redraw_display = 1;
+        
+        
+        // Redraw display if needed
+        if(FLAG_redraw_display){
+            Display_Update();
+        }
         
         __delay_ms(10);       
     }

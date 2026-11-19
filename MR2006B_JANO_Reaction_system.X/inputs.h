@@ -1,8 +1,8 @@
 /* 
- * File:                inputs.h
- * Author:              Nicolas Stock
- * Comments:
- * Revision history:    31.08.2026 17:09 - Created file
+- File:                inputs.h
+- Author:              Nicolas Stock
+- Comments:
+- Revision history:    31.08.2026 17:09 - Created file
  */
 
 
@@ -49,9 +49,9 @@ typedef enum{
 
 // Joystick Functions
 /*
- * The Joystick's axis are placed as:
- * X: vertical axis, referred to in its extremes as UP and DOWN
- * Y: horizontal axis, referred to in its extremes as LEFT and RIGHT
+- The Joystick's axis are placed as:
+- X: vertical axis, referred to in its extremes as UP and DOWN
+- Y: horizontal axis, referred to in its extremes as LEFT and RIGHT
  */
 
 /**
@@ -151,8 +151,25 @@ float getJoyStickPitchAxisXpercent(void);
     <p><b>Parameters:</b></p>
     <p><b>Returns: float</b></p>
  */
+float getJoyStickPitchAxisYpercent(void);
 
 joystick_state_t getJoystickState(void);
+
+joystick_state_t getJoystickDirection(void);
+
+joystick_state_t getJoystickDirectionEdge(void);
+
+unsigned char wasJoystickLeft(void);
+
+unsigned char wasJoystickRight(void);
+
+unsigned char wasJoystickUp(void);
+
+unsigned char wasJoystickDown(void);
+
+unsigned char wasJoystickPressed(void);
+
+unsigned char wasJoystickReleased(void);
 
 float JoyStickPitchAxisYpercent(void);
 

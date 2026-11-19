@@ -28,6 +28,10 @@
 #define BLACK      0x00
 #define WHITE      0x01
 
+//
+#define DISPLAY_HEADBAR_WIDTH   10
+#define MAX_ITEMS_PER_PAGE      5
+
 // Functions
 void Init_Display(void);
 void Display_Clear(void);

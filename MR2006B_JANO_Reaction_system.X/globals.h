@@ -33,6 +33,8 @@
 
 // Global variables for all modules
 
+extern volatile unsigned char FLAG_redraw_display;
+
 extern volatile unsigned char UART_received_data1;
 extern volatile unsigned char UART_new_received_message1;
 extern volatile unsigned char UART_received_data2;
