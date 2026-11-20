@@ -10,6 +10,10 @@
 #include "ssd1312_commands.h"
 #include "fonts.h"
 #include "spi_functions.h"
+#include "inputs.h"
+#include "dfplayermini.h"
+#include "hc05.h"
+#include <string.h>
 
 // Local Frame Buffer: 128 columns * 8 pages (8 pixels per page) = 1024 Bytes
 unsigned char SSD1312_Buffer[1024];
@@ -129,21 +133,11 @@ void Display_Draw_Char(unsigned int x, unsigned int y, char c, FontDef* font, un
 
     unsigned int char_index = 0;
 
-    // 1. Font-specific Character Mapping
-    if (font->height == 18) {
-        // 11x18 Font Mapping: Space = Index 0, '0'-'9' = Index 1-10
-        if (c == ' ') {
-            char_index = 0;
-        } else if (c >= '0' && c <= '9') {
-            char_index = (c - '0') + 1; // Map '0' (48) to Index 1
-        } else {
-            return; // Unsupported character for this truncated font
-        }
-    } else {
-        // Standard 5x7 ASCII Mapping (ASCII 32 to 126)
-        if (c < 32 || c > 126) return; 
-        char_index = c - 32;
+    // 1. Standard Printable ASCII Mapping (ASCII 32 ' ' to 126 '~')
+    if (c < 32 || c > 126) {
+        return;
     }
+    char_index = (unsigned int)(c - 32);
 
     // 2. Calculate how many vertical bytes make up one column of the font
     unsigned char bytes_per_column = (font->height + 7) / 8;
@@ -204,23 +198,83 @@ void Display_Draw_Icon(unsigned int x, unsigned int y, unsigned int width, unsig
     }
 }
 
-void Display_Draw_Headbar() {
-    // 1. Draw horizontal separator at Y=DISPLAY_HEADBAR_WIDTH
+void Display_Draw_Headbar(void) {
+    unsigned char dist_edge = 2;        // 2px right screen margin
+    const unsigned char icon_gap = 4;   // 4px gap
+
+    // 1. Clear the right-hand icon zone
+    for (unsigned int x = 92; x < SSD1312_PX_WIDTH; x++) {
+        for (unsigned int y = 0; y < DISPLAY_HEADBAR_WIDTH; y++) {
+            Display_Draw_Pixel(x, y, BLACK);
+        }
+    }
+
+    // 2. Draw horizontal separator at Y = DISPLAY_HEADBAR_WIDTH
     for (unsigned int x = 0; x < SSD1312_PX_WIDTH; x++) {
         Display_Draw_Pixel(x, DISPLAY_HEADBAR_WIDTH, WHITE);
     }
-    
-    // 2. Draw static text 
-    Display_Draw_String(0, 1, "SIRO de Rosita", &Font_5x7, WHITE);
-    
-    // 3. Draw dynamic icons (Right-aligned)
-    if(HC05_STATE){
-        Display_Draw_Icon(SSD1312_PX_WIDTH - 1*10, 1, 8, 8, icon_bt, WHITE);
-    } else {
-        // Erase icon if disconnected by drawing it in BLACK
-        Display_Draw_Icon(SSD1312_PX_WIDTH - 1*10, 1, 8, 8, icon_bt, BLACK);
+
+    // 3. Draw static title text
+    Display_Draw_String(0, 2, "Hola Rosita!", &Font_5x7, WHITE);
+
+    // 4. Draw Bluetooth status icon (Right-aligned)
+    if (HC05_STATE) { // BT connected
+        dist_edge += ICON_BT_CONN_WIDTH;
+        Display_Draw_Icon(SSD1312_PX_WIDTH - dist_edge, 1, ICON_BT_CONN_WIDTH, ICON_HEIGHT, icon_bt_connected, WHITE);
+    } else {          // BT disconnected
+        dist_edge += ICON_BT_DISC_WIDTH;
+        Display_Draw_Icon(SSD1312_PX_WIDTH - dist_edge, 1, ICON_BT_DISC_WIDTH, ICON_HEIGHT, icon_bt_disconnected, WHITE);
+    }
+
+    dist_edge += icon_gap;
+
+    // 5. Draw speaker / volume icon
+    if (isVolumeZero()) {
+        Display_Draw_Icon(SSD1312_PX_WIDTH - (dist_edge + ICON_VOL_MUTE_WIDTH), 1, ICON_VOL_MUTE_WIDTH, ICON_HEIGHT, icon_vol_mute, WHITE);
+    }
+    else if (isVolumeLow()) {
+        Display_Draw_Icon(SSD1312_PX_WIDTH - (dist_edge + ICON_VOL_LOW_WIDTH), 1, ICON_VOL_LOW_WIDTH, ICON_HEIGHT, icon_vol_low, WHITE);
+    }
+    else if (isVolumeMid()) {
+        Display_Draw_Icon(SSD1312_PX_WIDTH - (dist_edge + ICON_VOL_MID_WIDTH), 1, ICON_VOL_MID_WIDTH, ICON_HEIGHT, icon_vol_mid, WHITE);
+    }
+    else if (isVolumeHigh()) {
+        Display_Draw_Icon(SSD1312_PX_WIDTH - (dist_edge + ICON_VOL_HIGH_WIDTH), 1, ICON_VOL_HIGH_WIDTH, ICON_HEIGHT, icon_vol_high, WHITE);
     }
     
-    // 4. Drawing speaker icon (missing dynamic of drawing)
-    Display_Draw_Icon(SSD1312_PX_WIDTH - 2*10 - 4, 1, 8, 8, icon_speaker, WHITE);
+    // 6. Set global redraw flag
+    if (hasBtStateChanged() || hasDfpStateChanged() || hasVolumeChanged()) {
+        FLAG_redraw_display = 1;
+    }
+}
+
+unsigned char getTextCentreXPos(const char* txt, const char charWidth){
+    unsigned int txtLen = strlen(txt);
+    unsigned int txtWidth = (txtLen > 0) ? ((txtLen * (charWidth + 1u)) - 1u) : 0;
+    unsigned int txtX = (txtWidth < SSD1312_PX_WIDTH) ? ((SSD1312_PX_WIDTH - txtWidth) / 2) : 0;
+    return (unsigned char)txtX;
+}
+
+void Display_Draw_Mode_Screen(const char* title, const char* instruction1, const char* instruction2){
+    unsigned char xPos = 0;
+    unsigned char yPos = DISPLAY_HEADBAR_WIDTH + 2;
+    const unsigned char ySep = 3;
+    
+    // Clear previous menu content and restore top status bar
+    Display_Clear();
+    Display_Draw_Headbar();
+    
+    // Title uses bigger font 11x18
+    xPos = getTextCentreXPos(title, 11);
+    Display_Draw_String(xPos, yPos, title, &Font_11x18, WHITE);
+    yPos += 18+ySep;
+    
+    xPos = getTextCentreXPos(instruction1, 5);
+    Display_Draw_String(xPos, yPos, instruction1, &Font_5x7, WHITE);
+    yPos += 7+ySep;
+    
+    xPos = getTextCentreXPos(instruction2, 5);
+    Display_Draw_String(xPos, yPos, instruction2, &Font_5x7, WHITE);
+    
+    FLAG_redraw_display = 1;
 }

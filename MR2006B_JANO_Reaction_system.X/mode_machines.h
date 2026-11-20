@@ -9,7 +9,7 @@
 #define	MODE_MACHINES_H
 
 void state_machine_menu(void);
-void state_machine_chain(void);
+void state_machine_synchronous(void);
 void state_machine_holdrelease(void);
 void state_machine_random(void);
 void state_machine_vehiclecontrol(void);

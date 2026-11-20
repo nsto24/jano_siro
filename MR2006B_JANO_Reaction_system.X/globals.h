@@ -30,6 +30,7 @@
 #define TIMER0_RELOAD   (65536 - TIMER0_TICKS)
 #define TMR0H_VAL       (unsigned char)(TIMER0_RELOAD >> 8)
 #define TMR0L_VAL       (unsigned char)(TIMER0_RELOAD & 0xFF)
+#define INPUT_TICK_MS   10u         // Timer0 ISR period in milliseconds
 
 // Global variables for all modules
 

@@ -32,6 +32,7 @@ volatile unsigned char joy_sw_pressed_live = 0;
 volatile unsigned char joy_sw_released_live = 0; 
 volatile joystick_state_t joy_dir_live = JOY_IDLE;
 volatile joystick_state_t joy_dir_edge_live = JOY_IDLE;
+volatile unsigned int joy_sw_hold_ticks_live = 0;  // Counts 10ms ticks while joystick SW is held
 
 // Snapshot variables for the main loop
 static unsigned int snap_state = 0;
@@ -44,6 +45,8 @@ static unsigned char snap_joy_sw_pressed = 0;
 static unsigned char snap_joy_sw_released = 0;   
 static joystick_state_t snap_joy_dir = JOY_IDLE;
 static joystick_state_t snap_joy_dir_edge = JOY_IDLE;
+static unsigned int snap_joy_sw_hold_ticks = 0;
+static unsigned int snap_joy_sw_prev_hold_ticks = 0;
 
 
 // ==========================================================================
@@ -69,18 +72,16 @@ static joystick_state_t evaluateJoystickDirection(unsigned int x, unsigned int y
             break;
     }
 
-    // Evaluate entry thresholds
-    if((x > JOY_TH_MID_MIN && x < JOY_TH_MID_MAX) && (y < JOY_TH_MIN)){
-        return JOY_LEFT;
-    }
-    if((x > JOY_TH_MID_MIN && x < JOY_TH_MID_MAX) && (y > JOY_TH_MAX)){
-        return JOY_RIGHT;
-    }
-    if((x > JOY_TH_MAX) && (y > JOY_TH_MID_MIN && y < JOY_TH_MID_MAX)){
-        return JOY_UP;
-    }
-    if((x < JOY_TH_MIN) && (y > JOY_TH_MID_MIN && y < JOY_TH_MID_MAX)){
-        return JOY_DOWN;
+    // Compare deflection from center (512) so slight off-center drift on the other axis doesn't block transitions
+    unsigned int dx = (x >= 512u) ? (x - 512u) : (512u - x);
+    unsigned int dy = (y >= 512u) ? (y - 512u) : (512u - y);
+
+    if(dy > dx){
+        if(y < JOY_TH_MIN){ return JOY_LEFT; }
+        if(y > JOY_TH_MAX){ return JOY_RIGHT; }
+    } else {
+        if(x > JOY_TH_MAX){ return JOY_UP; }
+        if(x < JOY_TH_MIN){ return JOY_DOWN; }
     }
 
     return JOY_IDLE;
@@ -172,6 +173,22 @@ unsigned char wasJoystickReleased(void){
     return snap_joy_sw_released;
 }
 
+unsigned int getJoystickHoldTimeMs(void){
+    return snap_joy_sw_hold_ticks * INPUT_TICK_MS;
+}
+
+unsigned char isJoystickPressedFor(unsigned int duration_ms){
+    unsigned int required_ticks = duration_ms / INPUT_TICK_MS;
+    if(required_ticks == 0u){ return isJoyStickPressed(); }
+    return (snap_joy_sw_hold_ticks >= required_ticks) ? 1 : 0;
+}
+
+unsigned char wasJoystickPressedFor(unsigned int duration_ms){
+    unsigned int required_ticks = duration_ms / INPUT_TICK_MS;
+    if(required_ticks == 0u){ return wasJoystickPressed(); }
+    return (snap_joy_sw_hold_ticks >= required_ticks && snap_joy_sw_prev_hold_ticks < required_ticks) ? 1 : 0;
+}
+
 
 // ==========================================================================
 // Functions for Volume Potentiometer reading
@@ -185,6 +202,21 @@ unsigned char hasVolumeChanged(void) {
     return snap_vol_changed;
 }
 
+unsigned char isVolumeZero(void){
+    return snap_vol <= 0;
+}
+
+unsigned char isVolumeLow(void){
+    return snap_vol > 0 && snap_vol <= 10;
+}
+
+unsigned char isVolumeMid(void){
+    return snap_vol > 10  && snap_vol <= 20;
+}
+
+unsigned char isVolumeHigh(void){
+    return snap_vol > 20  && snap_vol <= 30;
+}
 
 // ==========================================================================
 // Functions for Reading of buttons and Syncing
@@ -214,6 +246,8 @@ void Sync_Inputs(void) {
     snap_joy_dir = joy_dir_live;
     snap_joy_dir_edge = joy_dir_edge_live;
     joy_dir_edge_live = JOY_IDLE;       // Clear live direction edge safely
+    snap_joy_sw_prev_hold_ticks = snap_joy_sw_hold_ticks;
+    snap_joy_sw_hold_ticks = joy_sw_hold_ticks_live;
     
     GIE = 1;                            // Re-enable interrupts
 }
@@ -310,6 +344,18 @@ void Buttons_ISR_Handler(void){
             }
             joy_dir_live = new_joy_dir;
         }
+        
+        // Track hold duration in 10ms ticks (capped at 6553 ticks = 65.53s to prevent ms overflow)
+        
+        if(joy_raw.sw != 0){
+            if(joy_sw_hold_ticks_live < 6553u){
+                joy_sw_hold_ticks_live++;
+            }
+        } else {
+            joy_sw_hold_ticks_live = 0;
+        }
+        
+        
         
         // Write the local raw struct to the live global struct
         joy_live = joy_raw;

@@ -17,6 +17,12 @@ typedef enum{
 
 // Functions
 
+void DFP_UpdateState(void);
+
+unsigned char isDfpPlaying(void);
+
+unsigned char hasDfpStateChanged(void);
+
 uint16_t DFP_calc_checksum(unsigned char cmd, unsigned char feedback, uint16_t parameter);
 
 void DFP_sendCommand(unsigned char cmd, unsigned char feedback, uint16_t parameter);

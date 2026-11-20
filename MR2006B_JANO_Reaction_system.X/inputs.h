@@ -173,9 +173,40 @@ unsigned char wasJoystickReleased(void);
 
 float JoyStickPitchAxisYpercent(void);
 
+/**
+    <p><b>Function prototype: unsigned int getJoystickHoldTimeMs(void)</b></p>
+    <p><b>Summary: Returns how long the joystick button has been held down in ms</b></p>
+    <p><b>Returns: unsigned int (0 if not pressed, capped at 65530 ms)</b></p>
+ */
+unsigned int getJoystickHoldTimeMs(void);
+
+/**
+    <p><b>Function prototype: unsigned char isJoystickPressedFor(unsigned int duration_ms)</b></p>
+    <p><b>Summary: Checks if the joystick button is currently held for at least duration_ms</b></p>
+    <p><b>Parameters: duration_ms - Minimum hold time in milliseconds</b></p>
+    <p><b>Returns: unsigned char (1 while held >= duration_ms, else 0)</b></p>
+ */
+unsigned char isJoystickPressedFor(unsigned int duration_ms);
+
+/**
+    <p><b>Function prototype: unsigned char wasJoystickPressedFor(unsigned int duration_ms)</b></p>
+    <p><b>Summary: Single-shot trigger that fires once when hold time reaches duration_ms</b></p>
+    <p><b>Parameters: duration_ms - Target hold time in milliseconds</b></p>
+    <p><b>Returns: unsigned char (1 on the cycle duration_ms is reached, else 0)</b></p>
+ */
+unsigned char wasJoystickPressedFor(unsigned int duration_ms);
+
 unsigned char getVolumeState(void);
 
 unsigned char hasVolumeChanged(void);
+
+unsigned char isVolumeZero(void);
+
+unsigned char isVolumeLow(void);
+
+unsigned char isVolumeMid(void);
+
+unsigned char isVolumeHigh(void);
 
 void Sync_Inputs(void);
 

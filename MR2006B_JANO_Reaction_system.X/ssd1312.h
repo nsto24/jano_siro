@@ -29,7 +29,7 @@
 #define WHITE      0x01
 
 //
-#define DISPLAY_HEADBAR_WIDTH   10
+#define DISPLAY_HEADBAR_WIDTH   11
 #define MAX_ITEMS_PER_PAGE      5
 
 // Functions
@@ -40,7 +40,9 @@ void Display_Draw_Pixel(unsigned int x, unsigned int y, unsigned char color);
 void Display_Draw_Char(unsigned int x, unsigned int y, char c, FontDef* font, unsigned char color);
 void Display_Draw_String(unsigned int x, unsigned int y, char* str, FontDef* font, unsigned char color);
 void Display_Draw_Icon(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const unsigned char* icon, unsigned char color);
-void Display_Draw_Headbar();
+void Display_Draw_Headbar(void);
+unsigned char getTextCentreXPos(const char* txt, const char charWidth);
+void Display_Draw_Mode_Screen(const char* title, const char* instruction1, const char* instruction2);
 
 #endif	/* SSD1312_H */
 

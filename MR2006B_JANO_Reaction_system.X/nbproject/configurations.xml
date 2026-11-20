@@ -44,6 +44,7 @@
       <itemPath>dfplayermini.c</itemPath>
       <itemPath>ssd1312.c</itemPath>
       <itemPath>fonts.c</itemPath>
+      <itemPath>mode_synchronous.c</itemPath>
     </logicalFolder>
     <itemPath>.gitignore</itemPath>
   </logicalFolder>
@@ -187,6 +188,7 @@
         <property key="event.recorder.debugger.behavior" value="Running"/>
         <property key="event.recorder.enabled" value="false"/>
         <property key="event.recorder.scvd.files" value=""/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="lastid" value=""/>
         <property key="memories.aux" value="false"/>

@@ -11,7 +11,30 @@
 #include "uart.h"
 #include "dfplayermini.h"
 
-// Functions
+static unsigned char dfp_playing_snap = 0;
+static unsigned char dfp_changed_snap = 0;
+static unsigned char last_dfp_playing = 0xFF; // 0xFF forces initial evaluation on startup
+
+void DFP_UpdateState(void) {
+    // DFP_BUSY is active-LOW on the DFPlayer Mini (0 = playing, 1 = idle)
+    unsigned char current_playing = (DFP_BUSY == 0) ? 1 : 0;
+
+    if (current_playing != last_dfp_playing) {
+        last_dfp_playing = current_playing;
+        dfp_playing_snap = current_playing;
+        dfp_changed_snap = 1;
+    } else {
+        dfp_changed_snap = 0;
+    }
+}
+
+unsigned char isDfpPlaying(void) {
+    return dfp_playing_snap;
+}
+
+unsigned char hasDfpStateChanged(void) {
+    return dfp_changed_snap;
+}
 
 uint16_t DFP_calc_checksum(unsigned char cmd, unsigned char feedback, uint16_t parameter){
     // Checksum (2 bytes) = 0xFFFF?(Ver.+Length+CMD+Feedback+Para_MSB+Para_LSB)+1
@@ -91,7 +114,7 @@ void Init_DFP(void){
     DFP_sendCommand(DFP_SPECIFY_PLAYBACK_OF_A_DEVICE, DFP_NO_FEEDBACK, DFP_TF_CARD_ONLINE);
     __delay_ms(200);
     // Initialize volume
-    DFP_specificVolume(15);
+    DFP_specificVolume(10);
     __delay_ms(200);
     // Setting EQ
     DFP_set_EQ(DFP_EQ_NORMAL);

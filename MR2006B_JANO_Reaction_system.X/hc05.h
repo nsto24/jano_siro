@@ -9,5 +9,8 @@
 #define	HC05_H
 
 void Init_HC05(void);
+void HC05_SyncState(void);
+unsigned char isBtConnected(void);
+unsigned char hasBtStateChanged(void);
 
 #endif	/* HC05_H */

@@ -159,12 +159,20 @@ void main(void) {
     Init_Interrupts();
     Init_DFP();
       
+    // Test functions
+    //DFP_play_trackMP3(1);
+    
 
     while(1){        
+        // Pre cycle functions
         Sync_Inputs();
+        HC05_SyncState();
+        DFP_UpdateState();
+        if(hasVolumeChanged()){DFP_specificVolume(getVolumeState());}
         
+        // Test functions
         SPI_Write_Outputs(getButtonState());
-        
+        /*
         if(wasButtonPressed(BUTTON_A_1)){
             DFP_play_trackMP3(1);
         }
@@ -180,18 +188,21 @@ void main(void) {
         if(wasButtonPressed(BUTTON_C_3)){
             SPEAKER_MUTE = 0;
         }
+        */
         
-        if(hasVolumeChanged()){
-            DFP_specificVolume(getVolumeState());
-        }
-        
-        Display_Draw_String(5, 5, "Initialized", &Font_5x7, WHITE);
+        Display_Draw_Headbar();
+        /*
         sprintf(buf, "x:%2.1f y:%2.1f sw:%1d", getJoyStickAxisXpercent(), getJoyStickAxisYpercent(), isJoyStickPressed());
         Display_Draw_String(5, 20, buf, &Font_5x7, WHITE);
-        FLAG_redraw_display = 1;
+        sprintf(buf, "vol:%2d", getVolumeState());
+        Display_Draw_String(5, 40, buf, &Font_5x7, WHITE);
+        */
+        
+        state_machine_menu();
         
         
-        // Redraw display if needed
+        // After cycle functions
+        
         if(FLAG_redraw_display){
             Display_Update();
         }

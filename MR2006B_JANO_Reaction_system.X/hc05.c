@@ -8,6 +8,7 @@
 // #include
 #include "globals.h"
 #include "uart.h"
+#include "mcu_config.h"
 #include <string.h>
 
 #define HC05_TARGET_BT_ADRESS_1     0x582A
@@ -20,6 +21,30 @@
 // Pre-calculate the 38400 baud rate value using the 16-bit High-Speed formula (Divisor = 4)
 #define UART_BAUD_AT         38400UL
 #define UART_BRG_AT_VAL      (((_XTAL_FREQ + 2UL * UART_BAUD_AT) / (4UL * UART_BAUD_AT)) - 1)
+
+static unsigned char bt_state_snap = 0;
+static unsigned char bt_changed_snap = 0;
+static unsigned char last_bt_state = 0xFF;
+
+void HC05_SyncState(void) {
+    unsigned char current_state = HC05_STATE ? 1 : 0;
+
+    if (current_state != last_bt_state) {
+        last_bt_state = current_state;
+        bt_state_snap = current_state;
+        bt_changed_snap = 1;
+    } else {
+        bt_changed_snap = 0;
+    }
+}
+
+unsigned char isBtConnected(void) {
+    return bt_state_snap;
+}
+
+unsigned char hasBtStateChanged(void) {
+    return bt_changed_snap;
+}
 
 void Init_HC05(void){
     char bind_cmd[40] = "AT+BIND=";

@@ -7,14 +7,15 @@
 
 // #includes
 #include "globals.h"
+#include "ssd1312.h"
 
 // Global variable definition
 typedef enum states{
-    stateInit=-1                    // -1 for startup safe
-    /*Here all states: "stateXYZ"*/
-} state_t;                          // Enums for state machine
-static state_t currentState;        // To save current state
-static state_t lastState;           // To save last state (edges)
+    stateInit=-1,                           // -1 for startup safe
+    stateGame
+} state_t;                                  // Enums for state machine
+static state_t currentState = stateInit;    // To save current state
+static state_t lastState = stateGame;       // To save last state (edges)
 
 // Implementation of state machine
 
@@ -31,7 +32,7 @@ static void updateLastState(void){
     lastState = currentState;
 }
 
-void state_machine_vehcilecontrol(void){
+void state_machine_vehiclecontrol(void){
     
     switch (currentState){
         case stateInit:
@@ -40,7 +41,7 @@ void state_machine_vehcilecontrol(void){
             // Initial state programm (executed once upon call)
             if(wasTransition()){
                 // Initial programm here
-                
+                Display_Draw_Mode_Screen("Vehicle", "To start the activity", "PRESS Joystick");
                 // Update lastState
                 updateLastState();
             }
