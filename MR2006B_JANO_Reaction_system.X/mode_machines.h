@@ -14,5 +14,10 @@ void state_machine_holdrelease(void);
 void state_machine_random(void);
 void state_machine_vehiclecontrol(void);
 
+void reset_mode_random(void);
+void reset_mode_synchronous(void);
+void reset_mode_holdrelease(void);
+void reset_mode_vehiclecontrol(void);
+
 #endif	/* MODE_MACHINES_H */
 

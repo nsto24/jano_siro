@@ -277,6 +277,10 @@ unsigned char wasButtonReleased(unsigned int mask){
     return (snap_released & mask) != 0;
 }
 
+unsigned char wasAnyButtonPressed(){
+    return snap_pressed != 0;
+}
+
 
 // ==========================================================================
 // Timer0 Interrupt Service Routine (10ms Tick)

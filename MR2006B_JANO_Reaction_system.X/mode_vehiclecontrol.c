@@ -41,7 +41,7 @@ void state_machine_vehiclecontrol(void){
             // Initial state programm (executed once upon call)
             if(wasTransition()){
                 // Initial programm here
-                Display_Draw_Mode_Screen("Vehicle", "To start the activity", "PRESS Joystick");
+                Display_Draw_Mode_Screen("Vehicle", "Start: PRESS Joystick", "Menu: HOLD Joystick");
                 // Update lastState
                 updateLastState();
             }

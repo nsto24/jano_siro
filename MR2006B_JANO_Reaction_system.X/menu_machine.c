@@ -28,8 +28,12 @@ static state_t currentState = stateInit;    // To save current state
 static state_t lastState = stateModeVehicleControl;       // To save last state (edges)
 
 // Definition of Datatypes for Menu
+
+// TYPEDEF STATUS
+
 typedef struct{
     const char *label;
+    const char *value;
 }MenuItem_t;
 
 typedef struct{
@@ -61,7 +65,7 @@ const MenuPage_t MenuPages[] = {
         .title = "SETTINGS",
         .itemCount = 1,
         .items = {
-            {"Speaker Mute"}
+            {"Speaker Mute", 0}
         }
     }
 };
@@ -111,6 +115,12 @@ void redraw_menu_page(const MenuSystem_t *menu){
             Display_Draw_Icon(5, yPos, 8, 8, icon_arrow, WHITE);
         }
         Display_Draw_String(15, yPos, (char *)activePage->items[i].label, &Font_5x7, WHITE);
+        if(activePage->items[i] == 0){
+            Display_Draw_String(SSD1312_PX_WIDTH-5*3-2-2, yPos, "OFF", &Font_5x7, WHITE);
+        }
+        else{
+            Display_Draw_String(SSD1312_PX_WIDTH-5*3-2-2, yPos, "ON", &Font_5x7, WHITE);
+        }
     }
     
     // Set redraw flag to update OLED in main loop
@@ -203,6 +213,7 @@ void state_machine_menu(void){
                     
             // Transitions & Actions
             if(wasJoystickPressedFor(1500)){
+                reset_mode_holdrelease();
                 transitionTo(stateMenuPage1);
             }
             break;
@@ -216,6 +227,7 @@ void state_machine_menu(void){
                     
             // Transitions & Actions
             if(wasJoystickPressedFor(1500)){
+                reset_mode_random();
                 transitionTo(stateMenuPage1);
             }
             break;
@@ -229,6 +241,7 @@ void state_machine_menu(void){
                     
             // Transitions & Actions
             if(wasJoystickPressedFor(1500)){
+                reset_mode_synchronous();
                 transitionTo(stateMenuPage1);
             }
             break;
@@ -242,6 +255,7 @@ void state_machine_menu(void){
                     
             // Transitions & Actions
             if(wasJoystickPressedFor(1500)){
+                reset_mode_vehiclecontrol();
                 transitionTo(stateMenuPage1);
             }
             break;

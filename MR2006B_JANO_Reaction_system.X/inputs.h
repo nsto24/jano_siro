@@ -222,6 +222,8 @@ unsigned char wasButtonPressed(unsigned int mask);
 
 unsigned char wasButtonReleased(unsigned int mask);
 
+unsigned char wasAnyButtonPressed();
+
 void Buttons_ISR_Handler(void);
 
 #endif	/* INPUTS_H */
