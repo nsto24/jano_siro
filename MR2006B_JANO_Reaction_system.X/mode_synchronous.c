@@ -77,7 +77,7 @@ void reset_mode_synchronous(void){
     SPI_Write_Outputs(0x0000);
 }
 
-void updateModeScreen(){
+static void updateModeScreen(){
     char buf[24] = {0};
     sprintf(buf, "Score:%3u Miss:%3u", success_count, failed_count);
     Display_Draw_Mode_Screen("Hold&Relea", buf, "Menu: HOLD Joystick");
@@ -87,15 +87,23 @@ void state_machine_synchronous(void){
     char buf[24] = {0};
     unsigned int pressed = 0;
 
-    switch (currentState){
+    switch (currentState){            
         case stateInit:
+            static unsigned char ready_to_start = 0;
+
             if(wasTransition()){
+                ready_to_start = 0;
                 SPI_Write_Outputs(0x0000);
                 Display_Draw_Mode_Screen("Synchron", "Start: PRESS Joystick", "Menu: HOLD Joystick");
                 updateLastState();
             }
 
-            if(wasJoystickPressed()){
+            // Wait until the menu-selection press has been released
+            if(!isJoyStickPressed()){
+                ready_to_start = 1;
+            }
+
+            if(ready_to_start && wasJoystickPressed()){
                 transitionTo(stateGame);
             }
             break;

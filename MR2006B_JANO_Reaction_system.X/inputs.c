@@ -1,7 +1,7 @@
 /*
-- File:                input.c
+- File:                inputs.c
 - Author:              Nicolas Stock
-- Comments:            Integrated Joystick into ISR and Snapshot architecture
+- Comments:            Integrated Joystick into ISR and Snapshot architecture (with 50ms hold buffer)
 - Revision history:    31.08.2026, 17:59
  */
 
@@ -13,26 +13,31 @@
 #include "spi_functions.h"
 
 // Compile-time integer ADC thresholds for Joystick evaluation
-#define JOY_TH_MIN          ((unsigned int)(1023.0 * JOYSTICK_MIN))
-#define JOY_TH_MAX          ((unsigned int)(1023.0 * JOYSTICK_MAX))
-#define JOY_TH_MID_MIN      ((unsigned int)(1023.0 * JOYSTICK_MID_MIN))
-#define JOY_TH_MID_MAX      ((unsigned int)(1023.0 * JOYSTICK_MID_MAX))
-#define JOY_HYSTERESIS      15u
+#define JOY_TH_MIN              ((unsigned int)(1023.0 * JOYSTICK_MIN))
+#define JOY_TH_MAX              ((unsigned int)(1023.0 * JOYSTICK_MAX))
+#define JOY_TH_MID_MIN          ((unsigned int)(1023.0 * JOYSTICK_MID_MIN))
+#define JOY_TH_MID_MAX          ((unsigned int)(1023.0 * JOYSTICK_MID_MAX))
+#define JOY_HYSTERESIS          15u
+
+// Minimum hold duration: 5 ticks * 10ms Timer0 ISR = 50ms
+#define JOY_HOLD_FILTER_TICKS       5u
+#define JOY_RELEASE_FILTER_TICKS    2u
+
 
 // Variable definition
 
 // Live variables modified by the ISR
-volatile unsigned int btn_state = 0;        // Saves the state of the buttons on last read
-volatile unsigned int btn_pressed = 0;      // Saves which buttons were newly pressed on last read
-volatile unsigned int btn_released = 0;     // Saves which buttons were released on last read
-volatile unsigned char vol_live = 0;        // Saves current volume
-volatile unsigned char vol_changed_live = 0;// Saves flag if volume has changed from last reading
-volatile joystick_t joy_live = {0, 0, 0};   // Saves state of Joystick 
+volatile unsigned int btn_state = 0;                // Saves the state of the buttons on last read
+volatile unsigned int btn_pressed = 0;              // Saves which buttons were newly pressed on last read
+volatile unsigned int btn_released = 0;             // Saves which buttons were released on last read
+volatile unsigned char vol_live = 0;                // Saves current volume
+volatile unsigned char vol_changed_live = 0;        // Saves flag if volume has changed from last reading
+volatile joystick_t joy_live = {0, 0, 0};           // Saves buffered state of Joystick 
 volatile unsigned char joy_sw_pressed_live = 0;  
 volatile unsigned char joy_sw_released_live = 0; 
 volatile joystick_state_t joy_dir_live = JOY_IDLE;
 volatile joystick_state_t joy_dir_edge_live = JOY_IDLE;
-volatile unsigned int joy_sw_hold_ticks_live = 0;  // Counts 10ms ticks while joystick SW is held
+volatile unsigned int joy_sw_hold_ticks_live = 0;   // Counts 10ms ticks while joystick SW is held
 
 // Snapshot variables for the main loop
 static unsigned int snap_state = 0;
@@ -289,7 +294,7 @@ unsigned char wasAnyButtonPressed(){
 void Buttons_ISR_Handler(void){
     if(TMR0IE && TMR0IF){
         unsigned int btn_raw = 0;
-        joystick_t joy_raw = {0,0,0};
+        joystick_t joy_raw = {0, 0, 0};
 
         // Reset Timer0 registers for the next 10ms tick
         TMR0H = TMR0H_VAL;
@@ -298,10 +303,10 @@ void Buttons_ISR_Handler(void){
         // 1. Reading buttons from input register (SPI)
         btn_raw = SPI_Read_Inputs();
 
-        // Analysing rising edges:  Set if one bit is set among last and raw and raw is set
+        // Analysing rising edges: Set if one bit is set among last and raw and raw is set
         btn_pressed |= (btn_state ^ btn_raw) & btn_raw;     // OR= (last XOR raw) AND raw
 
-        // Analysing falling edges:  Set if one bit is set among last and raw and raw is not set
+        // Analysing falling edges: Set if one bit is set among last and raw and raw is not set
         btn_released |= (btn_state ^ btn_raw) & ~btn_raw;   // OR= (last XOR raw) AND NOT raw
 
         // Writing the read button states into the current state variable
@@ -311,7 +316,7 @@ void Buttons_ISR_Handler(void){
         static unsigned int last_raw_vol = 0;
         
         Adc_SetChannel(ADC_CH_VOLUME);
-        unsigned int raw_vol = Adc_ReadValue();
+        unsigned int raw_vol = (unsigned int)Adc_ReadValue();
         
         // Check if value is within certain hysteresis
         if(raw_vol > (last_raw_vol + 4) || last_raw_vol > (raw_vol + 4)){
@@ -324,44 +329,71 @@ void Buttons_ISR_Handler(void){
             }
         }
         
-        // 3. Read Joystick (ADC + Digital)
+        // 3. Read Joystick (ADC + Digital) with 50ms hold buffer
+        static unsigned char joy_sw_debounced = 0u;
+        static unsigned char joy_sw_integrator = 0u;
+        static joystick_state_t joy_dir_candidate = JOY_IDLE;
+        static unsigned char joy_dir_filter_cnt = 0u;
+
         Adc_SetChannel(ADC_CH_JOYSTICK_X);
         joy_raw.x = Adc_ReadValue();
         
         Adc_SetChannel(ADC_CH_JOYSTICK_Y);
         joy_raw.y = Adc_ReadValue();
         
-        // Joystick is switching against ground (so it is inverted here )
-        joy_raw.sw = (JOYSTICK_SW == 0) ? 1 : 0; 
+        // Joystick switch is active-low against ground
+        unsigned char raw_sw = (JOYSTICK_SW == 0) ? 1u : 0u;
         
-        // Analysing rising edge (Pressed): Set if last was 0 and raw is 1
-        joy_sw_pressed_live |= (joy_live.sw ^ joy_raw.sw) & joy_raw.sw;
-        
-        // Analysing falling edge (Released): Set if last was 1 and raw is 0
-        joy_sw_released_live |= (joy_live.sw ^ joy_raw.sw) & ~joy_raw.sw;
-        
-        // Analysing direction edges with hysteresis
-        joystick_state_t new_joy_dir = evaluateJoystickDirection((unsigned int)joy_raw.x, (unsigned int)joy_raw.y, joy_dir_live);
-        if(new_joy_dir != joy_dir_live){
-            if(new_joy_dir != JOY_IDLE){
-                joy_dir_edge_live = new_joy_dir;
+        // Integrating 50ms press buffer (tolerates single-tick bounce without resetting)
+        if(raw_sw != 0u){
+            if(joy_sw_integrator < JOY_HOLD_FILTER_TICKS){
+                joy_sw_integrator++;
             }
-            joy_dir_live = new_joy_dir;
-        }
-        
-        // Track hold duration in 10ms ticks (capped at 6553 ticks = 65.53s to prevent ms overflow)
-        
-        if(joy_raw.sw != 0){
-            if(joy_sw_hold_ticks_live < 6553u){
-                joy_sw_hold_ticks_live++;
+            if((joy_sw_integrator >= JOY_HOLD_FILTER_TICKS) && (joy_sw_debounced == 0u)){
+                joy_sw_debounced = 1u;
+                joy_sw_pressed_live = 1u;
+                joy_sw_hold_ticks_live = JOY_HOLD_FILTER_TICKS; // Already held for 50ms
+            } else if(joy_sw_debounced != 0u){
+                if(joy_sw_hold_ticks_live < 6553u){
+                    joy_sw_hold_ticks_live++;
+                }
             }
         } else {
-            joy_sw_hold_ticks_live = 0;
+            if(joy_sw_integrator > 0u){
+                joy_sw_integrator--;
+            }
+            if((joy_sw_integrator <= (JOY_HOLD_FILTER_TICKS - JOY_RELEASE_FILTER_TICKS)) && (joy_sw_debounced != 0u)){
+                joy_sw_debounced = 0u;
+                joy_sw_integrator = 0u;
+                joy_sw_released_live = 1u;
+                joy_sw_hold_ticks_live = 0u;
+            }
+        }
+        joy_raw.sw = joy_sw_debounced;
+        
+        // Buffer cardinal direction changes: require 5 ticks (50ms) in the new direction
+        joystick_state_t raw_joy_dir = evaluateJoystickDirection((unsigned int)joy_raw.x, (unsigned int)joy_raw.y, joy_dir_live);
+        if(raw_joy_dir != joy_dir_live){
+            if(raw_joy_dir == joy_dir_candidate){
+                joy_dir_filter_cnt++;
+            } else {
+                joy_dir_candidate = raw_joy_dir;
+                joy_dir_filter_cnt = 1u;
+            }
+
+            if(joy_dir_filter_cnt >= JOY_HOLD_FILTER_TICKS){
+                joy_dir_live = joy_dir_candidate;
+                joy_dir_filter_cnt = 0u;
+                if(joy_dir_live != JOY_IDLE){
+                    joy_dir_edge_live = joy_dir_live;
+                }
+            }
+        } else {
+            joy_dir_candidate = joy_dir_live;
+            joy_dir_filter_cnt = 0u;
         }
         
-        
-        
-        // Write the local raw struct to the live global struct
+        // Write the local struct to the live global struct
         joy_live = joy_raw;
 
         // Clearing interrupt flag

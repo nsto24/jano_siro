@@ -8,6 +8,8 @@
 // #includes
 #include "globals.h"
 #include "ssd1312.h"
+#include "inputs.h"
+#include "spi_functions.h"
 
 // Global variable definition
 typedef enum states{
@@ -34,22 +36,25 @@ static void updateLastState(void){
 
 void state_machine_vehiclecontrol(void){
     
-    switch (currentState){
+    switch (currentState){            
         case stateInit:
-            // Error handling
-            
-            // Initial state programm (executed once upon call)
+            static unsigned char ready_to_start = 0;
+
             if(wasTransition()){
-                // Initial programm here
+                ready_to_start = 0;
+                SPI_Write_Outputs(0x0000);
                 Display_Draw_Mode_Screen("Vehicle", "Start: PRESS Joystick", "Menu: HOLD Joystick");
-                // Update lastState
                 updateLastState();
             }
-                    
-            // State programm (cyclic)
-            
-            // Transititons
-            
+
+            // Wait until the menu-selection press has been released
+            if(!isJoyStickPressed()){
+                ready_to_start = 1;
+            }
+
+            if(ready_to_start && wasJoystickPressed()){
+                transitionTo(stateGame);
+            }
             break;
         
         default:

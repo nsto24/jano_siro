@@ -10,6 +10,7 @@
 #include "ssd1312.h"
 #include "inputs.h"
 #include "spi_functions.h"
+#include <stdlib.h>
 
 #define MAX_MISSES 2
 
@@ -58,10 +59,10 @@ void reset_mode_random(void){
     SPI_Write_Outputs(0x0000);
 }
 
-void updateModeScreen(){
+static void updateModeScreen(){
     char buf[24] = {0};
     sprintf(buf, "Score:%3u Miss:%3u", success_count, failed_count);
-    Display_Draw_Mode_Screen("Hold&Relea", buf, "Menu: HOLD Joystick");
+    Display_Draw_Mode_Screen("Random", buf, "Menu: HOLD Joystick");
 }
 
 void state_machine_random(void){
@@ -69,13 +70,21 @@ void state_machine_random(void){
 
     switch (currentState){
         case stateInit:
+            static unsigned char ready_to_start = 0;
+
             if(wasTransition()){
+                ready_to_start = 0;
                 SPI_Write_Outputs(0x0000);
                 Display_Draw_Mode_Screen("Random", "Start: PRESS Joystick", "Menu: HOLD Joystick");
                 updateLastState();
             }
 
-            if(wasJoystickPressed()){
+            // Wait until the menu-selection press has been released
+            if(!isJoyStickPressed()){
+                ready_to_start = 1;
+            }
+
+            if(ready_to_start && wasJoystickPressed()){
                 transitionTo(stateGame);
             }
             break;

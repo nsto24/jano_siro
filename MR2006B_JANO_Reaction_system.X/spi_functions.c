@@ -11,14 +11,14 @@
 
 // Initialization function
 void Init_SPI(void){
-    SSP1STAT = SSPSTAT_def;
-    SSP2STAT = SSPSTAT_def;
+    SSP1STAT = 0b01000000;  // CKE = 1: SPI Mode 0 (data stable before rising SCK1 edge)
+    SSP2STAT = SSPSTAT_def; // Keep CH2 (74HC597 inputs) unchanged
     
-    SSP1CON1 = SSPCON1_def;
-    SSP2CON1 = SSPCON2_def;
+    SSP1CON1 = 0b00100001;  // CKP = 0 (idle LOW), SPI Master Fosc/16 (matches standalone test)
+    SSP2CON1 = SSPCON2_def; // Keep CH2 unchanged
     
-    SSP1IF = 0;       // Clear SSP1IF flag (no data received)
-    SSP2IF = 0;       // Clear SSP1IF flag (no data received)
+    SSP1IF = 0;             // Clear SSP1IF flag
+    SSP2IF = 0;             // Clear SSP2IF flag
     
     // Deselecting all slaves
     SPI_CS_DISPLAY = 1;
@@ -64,11 +64,12 @@ unsigned char SPI_Read_CH2(){
 void SPI_Write_Outputs(unsigned int data){
     // High byte is written first (shift register further from PIC)
     // Low byte is written second (shift register closer to PIC)
-    SPI_CS_OUTPUTS = 0;                     // Pull pin of outputs to low (active slave)
+    SPI_CS_OUTPUTS = 0;                     // Pull RCLK low before shifting
     __delay_us(20);
-    SPI_Write_CH1((data >> 8) & 0x00FF);    // Writing high byte to slave
-    SPI_Write_CH1(data & 0x00FF);           // Writing low byte to slave
-    SPI_CS_OUTPUTS = 1;                     // Pull pin of outputs to high (deactive slave)
+    SPI_Write_CH1((data >> 8) & 0x00FF);    // Writing high byte to slave (IC2: C1..C4)
+    SPI_Write_CH1(data & 0x00FF);           // Writing low byte to slave (IC1: A1..B4)
+    __delay_us(5);                          // Settling delay before latching
+    SPI_CS_OUTPUTS = 1;                     // Rising edge latches data to outputs
 }
 
 unsigned int SPI_Read_Inputs(void){

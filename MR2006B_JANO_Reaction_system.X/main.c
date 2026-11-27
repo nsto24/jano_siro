@@ -145,9 +145,10 @@ void main(void) {
     // Calling of Init Functions
     Init_Pins();
     
-    __delay_ms(100);
+    __delay_ms(2000);
     
     DISPLAY_RES = 1;
+    SPEAKER_MUTE = 0;
     
     Init_ADC();
     Init_Timers();
@@ -157,49 +158,17 @@ void main(void) {
     Init_Display();
     //Init_HC05();
     Init_Interrupts();
-    Init_DFP();
-      
-    // Test functions
-    //DFP_play_trackMP3(1);
-    
+    Init_DFP();  
 
-    while(1){        
+    while(1){               
         // Pre cycle functions
         Sync_Inputs();
-        HC05_SyncState();
+        // HC05_SyncState();
         DFP_UpdateState();
+        
         if(hasVolumeChanged()){DFP_specificVolume(getVolumeState());}
         
-        // Test functions
-        SPI_Write_Outputs(getButtonState());
-        /*
-        if(wasButtonPressed(BUTTON_A_1)){
-            DFP_play_trackMP3(1);
-        }
-        if(wasButtonPressed(BUTTON_A_2)){
-            DFP_play();
-        }
-        if(wasButtonPressed(BUTTON_A_3)){
-            DFP_pause();
-        }
-        if(wasButtonPressed(BUTTON_C_4)){
-            SPEAKER_MUTE = 1;
-        }
-        if(wasButtonPressed(BUTTON_C_3)){
-            SPEAKER_MUTE = 0;
-        }
-        */
-        
-        Display_Draw_Headbar();
-        /*
-        sprintf(buf, "x:%2.1f y:%2.1f sw:%1d", getJoyStickAxisXpercent(), getJoyStickAxisYpercent(), isJoyStickPressed());
-        Display_Draw_String(5, 20, buf, &Font_5x7, WHITE);
-        sprintf(buf, "vol:%2d", getVolumeState());
-        Display_Draw_String(5, 40, buf, &Font_5x7, WHITE);
-        */
-        
         state_machine_menu();
-        
         
         // After cycle functions
         

@@ -115,7 +115,7 @@ void redraw_menu_page(const MenuSystem_t *menu){
             Display_Draw_Icon(5, yPos, 8, 8, icon_arrow, WHITE);
         }
         Display_Draw_String(15, yPos, (char *)activePage->items[i].label, &Font_5x7, WHITE);
-        if(activePage->items[i] == 0){
+        if(activePage->items[i].label == 0){
             Display_Draw_String(SSD1312_PX_WIDTH-5*3-2-2, yPos, "OFF", &Font_5x7, WHITE);
         }
         else{
@@ -255,7 +255,7 @@ void state_machine_menu(void){
                     
             // Transitions & Actions
             if(wasJoystickPressedFor(1500)){
-                reset_mode_vehiclecontrol();
+                //reset_mode_vehiclecontrol();
                 transitionTo(stateMenuPage1);
             }
             break;
